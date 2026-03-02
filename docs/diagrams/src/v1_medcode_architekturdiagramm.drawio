@@ -1,0 +1,342 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.6.0">
+  <diagram id="medcode-architecture" name="Softwarearchitektur Medcode v4">
+    <mxGraphModel dx="1557" dy="982" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=22;fontStyle=1;align=center;verticalAlign=middle;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#1a1a2e;" value="Softwarearchitektur - Medcode ICD-10 KI-Suche" vertex="1">
+          <mxGeometry height="40" width="700" x="400" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="docker_outline" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0277BD;strokeWidth=3;dashed=1;dashPattern=12 12;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="860" width="920" x="210" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="docker_label" parent="1" style="text;html=1;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;fillColor=#E1F5FE;strokeColor=#0277BD;fontColor=#0277BD;rounded=1;spacingLeft=8;spacingRight=8;" value="Docker Compose Umgebung" vertex="1">
+          <mxGeometry height="25" width="250" x="530" y="68" as="geometry" />
+        </mxCell>
+        <mxCell id="user_icon" parent="1" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" value="Patient / Nutzer" vertex="1">
+          <mxGeometry height="55" width="55" x="30" y="143" as="geometry" />
+        </mxCell>
+        <mxCell id="extradoc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#C62828;fontSize=11;align=center;verticalAlign=middle;dashed=1;dashPattern=8 8;" value="&lt;b&gt;extradoc.ch&lt;/b&gt;&lt;br&gt;(Verweis auf echte Ärzte)" vertex="1">
+          <mxGeometry height="50" width="180" x="10" y="305" as="geometry" />
+        </mxCell>
+        <mxCell id="frontend_group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;arcSize=8;" value="" vertex="1">
+          <mxGeometry height="360" width="310" x="230" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="frontend_label" parent="1" style="text;html=1;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#1a73e8;" value="Frontend (Web-Applikation / SPA)" vertex="1">
+          <mxGeometry height="25" width="280" x="245" y="118" as="geometry" />
+        </mxCell>
+        <mxCell id="search_ui" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;" value="&lt;b&gt;Suchmaske&lt;/b&gt;&lt;br&gt;&lt;br&gt;Eingabefeld für ICD-Code&lt;br&gt;oder med. Begriff&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="110" width="270" x="250" y="152" as="geometry" />
+        </mxCell>
+        <mxCell id="result_display" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;" value="&lt;b&gt;Ergebnis-Anzeige&lt;/b&gt;&lt;br&gt;&lt;br&gt;- Einfache Sprache / Fachsprache&lt;br&gt;- Facharzt-Empfehlung&lt;br&gt;- Verhaltensregeln&lt;br&gt;- &lt;font color=&quot;#E65100&quot;&gt;Verweis auf extradoc.ch&lt;/font&gt;" vertex="1">
+          <mxGeometry height="110" width="270" x="250" y="275" as="geometry" />
+        </mxCell>
+        <mxCell id="past_queries_ui" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#6c8ebf;fontSize=10;align=center;" value="&lt;b&gt;Bisherige Abfragen&lt;/b&gt;&lt;br&gt;(Startseite-Liste)" vertex="1">
+          <mxGeometry height="40" width="130" x="250" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="seo_cache" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=10;align=center;" value="Statische Seiten (SEO-Indexierung)" vertex="1">
+          <mxGeometry height="40" width="130" x="390" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;arcSize=8;" value="" vertex="1">
+          <mxGeometry height="340" width="400" x="600" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="backend_label" parent="1" style="text;html=1;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#2e7d32;" value="Backend (FastAPI / Python)" vertex="1">
+          <mxGeometry height="25" width="240" x="680" y="118" as="geometry" />
+        </mxCell>
+        <mxCell id="rest_api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;fontSize=12;align=center;verticalAlign=middle;" value="&lt;b&gt;REST API&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;/api/search&lt;br&gt;/api/explain/{code}&lt;br&gt;/api/specialist/{code}&lt;br&gt;/api/guidance/{code}&lt;/font&gt;" vertex="1">
+          <mxGeometry height="100" width="300" x="650" y="152" as="geometry" />
+        </mxCell>
+        <mxCell id="rag_pipeline" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2e7d32;fontSize=12;align=center;verticalAlign=middle;" value="&lt;b&gt;RAG Pipeline&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;1. Query an Embedding-Modell&lt;br&gt;2. Vektor-Suche (pgvector)&lt;br&gt;3. Context + Prompt an LLM&lt;br&gt;4. KI-Antwort generieren&lt;/font&gt;" vertex="1">
+          <mxGeometry height="100" width="300" x="650" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="data_import" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=10;align=center;" value="ICD-10 Daten-Import&lt;br&gt;(BfArM Parser)" vertex="1">
+          <mxGeometry height="40" width="130" x="870" y="385" as="geometry" />
+        </mxCell>
+        <mxCell id="static_generator" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=10;align=center;dashed=1;" value="&lt;b&gt;Statische Seiten&lt;/b&gt;&lt;br&gt;Generator (SEO)" vertex="1">
+          <mxGeometry height="40" width="117" x="650" y="395" as="geometry" />
+        </mxCell>
+        <mxCell id="data_access_group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;strokeWidth=1;dashed=1;arcSize=12;" value="" vertex="1">
+          <mxGeometry height="80" width="530" x="440" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="data_access_label" parent="1" style="text;html=1;fontSize=10;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#00695C;" value="Data Access Layer" vertex="1">
+          <mxGeometry height="18" width="130" x="640" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="embedding_model" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2e7d32;fontSize=11;align=center;verticalAlign=middle;" value="&lt;b&gt;Embedding-Modell&lt;/b&gt;&lt;br&gt;Sentence-Transformers&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;(lokal, multilingual)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="55" width="175" x="680" y="515" as="geometry" />
+        </mxCell>
+        <mxCell id="cache_layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;fontSize=10;align=center;dashed=1;" value="&lt;b&gt;Response Cache&lt;/b&gt;&lt;br&gt;Vorgenerierte KI-Antworten" vertex="1">
+          <mxGeometry height="45" width="170" x="460" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="db_group_wrapper" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="290" width="620" x="380" y="625" as="geometry" />
+        </mxCell>
+        <mxCell id="db_group" parent="db_group_wrapper" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;arcSize=8;" value="" vertex="1">
+          <mxGeometry height="270" width="530" as="geometry" />
+        </mxCell>
+        <mxCell id="db_label" parent="db_group_wrapper" style="text;html=1;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#7b1fa2;" value="Datenbank (PostgreSQL Container)" vertex="1">
+          <mxGeometry height="25" width="300" x="115" y="8" as="geometry" />
+        </mxCell>
+        <mxCell id="pg_relational" parent="db_group_wrapper" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#FFFFFF;strokeColor=#9673a6;fontSize=11;align=center;verticalAlign=middle;" value="&lt;b&gt;Relationale Daten&lt;/b&gt;&lt;br&gt;&lt;br&gt;ICD-10 Codes &amp;amp; Katalog&lt;br&gt;(Systematik, Alpha-Verz.)&lt;br&gt;Bisherige Abfragen&lt;br&gt;Cached Responses" vertex="1">
+          <mxGeometry height="170" width="200" x="30" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="pg_vector" parent="db_group_wrapper" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#EDE7F6;strokeColor=#7b1fa2;fontSize=11;align=center;verticalAlign=middle;" value="&lt;b&gt;pgvector&lt;/b&gt;&lt;br&gt;&lt;br&gt;Embeddings der&lt;br&gt;ICD-10-Begriffe&lt;br&gt;&lt;br&gt;Semantische Suche&lt;br&gt;(Cosine Similarity)" vertex="1">
+          <mxGeometry height="170" width="200" x="290" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="JXmtE0OAh9NoEu3wwm6z-1" edge="1" parent="db_group_wrapper" source="db_label" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.975;entryY=-0.12;entryDx=0;entryDy=0;entryPerimeter=0;" target="db_label">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bfarm_source" parent="db_group_wrapper" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=center;verticalAlign=middle;dashed=1;dashPattern=8 8;" value="&lt;b&gt;BfArM&lt;/b&gt; (Bundesinstitut fuer Arzneimittel)&lt;br&gt;ICD-10-GM 2026 - Systematik + Alpha-Verzeichnis" vertex="1">
+          <mxGeometry height="60" width="370" x="250" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="ext_group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;dashed=1;arcSize=8;" value="" vertex="1">
+          <mxGeometry height="200" width="260" x="1200" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ext_label" parent="1" style="text;html=1;fontSize=14;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#F57F17;" value="Externe Dienste" vertex="1">
+          <mxGeometry height="25" width="170" x="1245" y="118" as="geometry" />
+        </mxCell>
+        <mxCell id="llm_api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F57F17;fontSize=11;align=center;verticalAlign=middle;" value="&lt;b&gt;LLM API&lt;/b&gt;&lt;br&gt;&lt;br&gt;Google Gemini&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Generiert KI-Antworten&lt;br&gt;basierend auf RAG-Context&lt;/font&gt;" vertex="1">
+          <mxGeometry height="140" width="220" x="1220" y="152" as="geometry" />
+        </mxCell>
+        <mxCell id="medcode_server" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#283593;fontSize=11;align=center;verticalAlign=middle;dashed=1;dashPattern=8 8;" value="&lt;b&gt;Medcode Server&lt;/b&gt;&lt;br&gt;(Hosting durch Kunde)" vertex="1">
+          <mxGeometry height="50" width="200" x="570" y="1050" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_search" edge="1" parent="1" source="user_icon" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;strokeWidth=2;endArrow=classic;" target="search_ui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_search_lbl" connectable="0" parent="e_user_search" style="edgeLabel;html=1;fontSize=10;fontColor=#666666;" value="Suchanfrage" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_fe_be" edge="1" parent="1" source="search_ui" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=2;endArrow=classic;startArrow=classic;" target="rest_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_fe_be_lbl" connectable="0" parent="e_fe_be" style="edgeLabel;html=1;fontSize=10;fontColor=#333333;fontStyle=1;" value="HTTP / JSON" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_api_rag" edge="1" parent="1" source="rest_api" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;strokeWidth=1;endArrow=classic;" target="rag_pipeline">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rag_llm" edge="1" parent="1" source="rag_pipeline" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F57F17;strokeWidth=2;endArrow=classic;startArrow=classic;" target="llm_api">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1150" y="318" />
+              <mxPoint x="1150" y="222" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_llm_lbl" connectable="0" parent="e_rag_llm" style="edgeLabel;html=1;fontSize=10;fontColor=#F57F17;" value="Prompt +&lt;br&gt;ICD-10 Context" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_embed" edge="1" parent="1" source="rag_pipeline" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2e7d32;strokeWidth=2;endArrow=classic;startArrow=classic;" target="embedding_model">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="768" y="390" />
+              <mxPoint x="768" y="515" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_embed_lbl" connectable="0" parent="e_rag_embed" style="edgeLabel;html=1;fontSize=10;fontColor=#2e7d32;" value="Query → Vektor" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-38" y="17" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_embed_pgvec" edge="1" parent="1" source="embedding_model" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#7b1fa2;strokeWidth=2;endArrow=classic;" target="pg_vector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_embed_pgvec_lbl" connectable="0" parent="e_embed_pgvec" style="edgeLabel;html=1;fontSize=9;fontColor=#7b1fa2;" value="Embeddings speichern /&lt;br&gt;Similarity Search" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-49" y="-12" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_db" edge="1" parent="1" source="rag_pipeline" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;strokeWidth=2;endArrow=classic;startArrow=classic;" target="pg_relational">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="320" />
+              <mxPoint x="565" y="320" />
+              <mxPoint x="565" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_db_lbl" connectable="0" parent="e_rag_db" style="edgeLabel;html=1;fontSize=10;fontColor=#9673a6;" value="SQL Queries" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-40" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_cache" edge="1" parent="1" source="rag_pipeline" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F9A825;strokeWidth=1;endArrow=classic;startArrow=classic;dashed=1;" target="cache_layer">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="340" />
+              <mxPoint x="545" y="340" />
+              <mxPoint x="545" y="543" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rag_cache_lbl" connectable="0" parent="e_rag_cache" style="edgeLabel;html=1;fontSize=9;fontColor=#F9A825;" value="Cache Check / Store" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-40" y="20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_cache_db" edge="1" parent="1" source="cache_layer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;strokeWidth=1;endArrow=classic;startArrow=classic;dashed=1;" target="pg_relational">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="545" y="660" />
+              <mxPoint x="545" y="660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_bfarm_import" edge="1" parent="1" source="bfarm_source" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b85450;strokeWidth=2;endArrow=classic;dashed=1;" target="data_import">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_bfarm_import_lbl" connectable="0" parent="e_bfarm_import" style="edgeLabel;html=1;fontSize=10;fontColor=#b85450;" value="CSV/XML Import&lt;br&gt;(einmalig/periodisch)" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_import_db" edge="1" parent="1" source="data_import" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;strokeWidth=1;endArrow=classic;dashed=1;" target="pg_relational">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="935" y="610" />
+              <mxPoint x="580" y="610" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_import_embed" edge="1" parent="1" source="data_import" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2e7d32;strokeWidth=1;endArrow=classic;dashed=1;" target="embedding_model">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="935" y="470" />
+              <mxPoint x="935" y="543" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_import_embed_lbl" connectable="0" parent="e_import_embed" style="edgeLabel;html=1;fontSize=9;fontColor=#2e7d32;" value="Texte → Vektoren" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-35" y="-54" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_cache_static" edge="1" parent="1" source="cache_layer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#E65100;strokeWidth=1;endArrow=classic;dashed=1;" target="static_generator">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="543" />
+              <mxPoint x="420" y="490" />
+              <mxPoint x="709" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_static_seo" edge="1" parent="1" source="static_generator" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#E65100;strokeWidth=1;endArrow=classic;dashed=1;" target="seo_cache">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="415" />
+              <mxPoint x="620" y="460" />
+              <mxPoint x="455" y="460" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_static_seo_lbl" connectable="0" parent="e_static_seo" style="edgeLabel;html=1;fontSize=9;fontColor=#E65100;" value="Generierte HTML-Seiten" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_db_pastqueries" edge="1" parent="1" source="pg_relational" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1;endArrow=classic;dashed=1;" target="past_queries_ui">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="315" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_db_pastqueries_lbl" connectable="0" parent="e_db_pastqueries" style="edgeLabel;html=1;fontSize=9;fontColor=#6c8ebf;" value="via REST API" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_result_extradoc" edge="1" parent="1" source="result_display" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#C62828;strokeWidth=1;endArrow=classic;dashed=1;" target="extradoc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_result_extradoc_lbl" connectable="0" parent="e_result_extradoc" style="edgeLabel;html=1;fontSize=9;fontColor=#C62828;" value="Marketing-Verweis" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_deploy" edge="1" parent="1" source="docker_outline" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#283593;strokeWidth=2;endArrow=classic;dashed=1;dashPattern=8 8;" target="medcode_server">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_deploy_lbl" connectable="0" parent="e_deploy" style="edgeLabel;html=1;fontSize=10;fontColor=#283593;" value="Docker Deploy" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="10" y="13" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rag_flow_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#FFFDE7;strokeColor=#F57F17;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;spacingRight=5;" value="&lt;b&gt;RAG-Ablauf:&lt;/b&gt;&lt;br&gt;1) Nutzer gibt ICD-Code oder Begriff ein&lt;br&gt;2) Cache prüfen (bereits generiert?)&lt;br&gt;3) Embedding-Modell wandelt Query in Vektor&lt;br&gt;4) pgvector findet ähnliche ICD-10-Einträge&lt;br&gt;5) Relevanter Context + Prompt an LLM&lt;br&gt;6) LLM generiert patientengerechte Antwort&lt;br&gt;7) Antwort cachen für SEO + Performance" vertex="1">
+          <mxGeometry height="140" width="320" x="1200" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="us_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#FFFDE7;strokeColor=#F57F17;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;spacingRight=5;" value="&lt;b&gt;User Stories:&lt;/b&gt;&lt;br&gt;US1: ICD-Code → Erklärung (einfache Sprache)&lt;br&gt;US2: Diagnose → Facharzt-Empfehlung&lt;br&gt;US3: Behandlung → Verhaltensregeln&lt;br&gt;US4: Semantische Suche (ungenaue Begriffe)&lt;br&gt;&lt;br&gt;&lt;b&gt;Zusatz:&lt;/b&gt; Verweis auf extradoc.ch (Marketing)" vertex="1">
+          <mxGeometry height="130" width="320" x="1200" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#cccccc;strokeWidth=1;" value="" vertex="1">
+          <mxGeometry height="340" width="260" x="1200" y="910" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Legende" vertex="1">
+          <mxGeometry height="25" width="100" x="1280" y="915" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Frontend (SPA)" vertex="1">
+          <mxGeometry height="20" width="140" x="1246" y="947" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="975" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Backend (FastAPI)" vertex="1">
+          <mxGeometry height="20" width="200" x="1246" y="972" as="geometry" />
+        </mxCell>
+        <mxCell id="leg8_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;dashed=1;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="leg8_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Data Access Layer" vertex="1">
+          <mxGeometry height="20" width="170" x="1246" y="997" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="1025" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Datenbank (PostgreSQL + pgvector)" vertex="1">
+          <mxGeometry height="20" width="210" x="1246" y="1022" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="1050" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Externe Dienste (LLM API)" vertex="1">
+          <mxGeometry height="20" width="170" x="1246" y="1047" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="1075" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Externe Datenquelle (BfArM)" vertex="1">
+          <mxGeometry height="20" width="190" x="1246" y="1072" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0277BD;strokeWidth=2;dashed=1;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Docker Compose Umgebung" vertex="1">
+          <mxGeometry height="20" width="190" x="1246" y="1097" as="geometry" />
+        </mxCell>
+        <mxCell id="leg7_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;dashed=1;" value="" vertex="1">
+          <mxGeometry height="14" width="18" x="1220" y="1125" as="geometry" />
+        </mxCell>
+        <mxCell id="leg7_txt" parent="1" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fillColor=none;strokeColor=none;" value="Cache (Performance)" vertex="1">
+          <mxGeometry height="20" width="170" x="1246" y="1122" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_tech" parent="1" style="text;html=1;fontSize=10;align=left;verticalAlign=top;fillColor=none;strokeColor=none;fontColor=#555555;whiteSpace=wrap;" value="&lt;b&gt;Tech Stack:&lt;/b&gt;&lt;br&gt;- Python 3.x / FastAPI&lt;br&gt;- PostgreSQL + pgvector&lt;br&gt;- Sentence-Transformers (lokal)&lt;br&gt;- LLM: Gemini&amp;nbsp;&lt;br&gt;- Docker Compose&lt;br&gt;- Hosting: Medcode Server" vertex="1">
+          <mxGeometry height="100" width="220" x="1220" y="1150" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
