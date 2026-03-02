@@ -20,8 +20,9 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 #for production use: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2" adjust dimenstion to 768
 model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-XML_FILE = "icd10gm2026syst_claml_20250912.xml"
-TXT_FILE = "icd10gm2026alpha_edvtxt_20250926.txt"
+DATA_DIR = os.getenv("DATA_DIR", ".")
+XML_FILE = os.path.join(DATA_DIR, "icd10gm2026syst_claml_20250912.xml")
+TXT_FILE = os.path.join(DATA_DIR, "icd10gm2026alpha_edvtxt_20250926.txt")
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIM = 384
