@@ -15,8 +15,8 @@ Felix, Alex, Julien, Christian, entschuldigt: Dennis
 ### 1 – ICD-10-Code Klassifizierung
 * Alex zeigt ICD-10-Code Klassifizierung und Idee, welche verwandte Codes gezeigt werden sollen.
 * Er möchte auf pgvector verzichten und einen direkteren Weg mit LLM einschlagen.
-* Diskussion über wie wenig die ICD-10 XML-Datei an Daten enthält, die weiterverarbeitet werden koennen.
-* Stellt sich die Frage, wie sinnvoll es ist diese zu verwenden.
+* Diskussion über wie wenig die ICD-10 XML-Datei an Daten enthält, die weiterverarbeitet werden können.
+* Stellt sich die Frage, wie sinnvoll es ist, diese zu verwenden.
 
 ### 2 – Priorisierung
 Juliens Ansicht, welche Prios wir haben in welcher Reihenfolge:
@@ -43,11 +43,11 @@ Juliens Ansicht, welche Prios wir haben in welcher Reihenfolge:
 | Frontend: Website | Alex |
 | Frontend–Backend Schnittstelle (Pointer Comparison) Vektoren | Julien |
 | API-Schnittstelle | Dennis (neu) |
-| Promptengineering | (Stefan) – muessen ihn noch fragen (neu) |
+| Promptengineering | (Stefan) – müssen ihn noch fragen (neu) |
 
 ## Offene Punkte
 * Stefan wegen Promptengineering fragen
 * Klären ob nächster Termin besser online durchgeführt wird
 
-## Naechster Termin
-* 11. März 2026 - 18:00 Uhr in Bern
+## Nächster Termin
+* 11.März 2026 - 18:00 Uhr in Bern
