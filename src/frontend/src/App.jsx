@@ -22,7 +22,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ description: symptoms }),
+        body: JSON.stringify({ user_input: symptoms }),
       });
 
       if (!response.ok) {
@@ -88,11 +88,11 @@ function App() {
               <h2>📚 Official BfArM Sources Used</h2>
               <p className="source-subtitle">Top vector search results for your input:</p>
               <ul className="source-list">
-                {result.source_data.map((item, index) => (
+                {result.sources?.map((item, index) => (
                   <li key={index} className="source-item">
                     <span className="source-code">{item.icd_code}</span>
-                    <span className="source-type">[{item.source_type}]</span>
-                    <span className="source-text">{item.text_snippet}</span>
+                    <span className="source-type">[{item.similarity.toFixed(2)} Match]</span>
+                    <span className="source-text">{item.title} - {item.term}</span>
                   </li>
                 ))}
               </ul>
