@@ -189,6 +189,10 @@ def import_xml():
 # --------------------------------------------------
 
 def import_txt():
+    print("Loading valid ICD codes...")
+    cur.execute("SELECT code FROM icd_class;")
+    valid_codes = {row[0] for row in cur.fetchall()}
+
     print("Parsing Alphabetical TXT...")
 
     with open(TXT_FILE, encoding="utf-8") as f:
@@ -203,6 +207,12 @@ def import_txt():
             term = parts[7]
 
             if not code or not term:
+                continue
+                
+            # Clean up the code (remove trailing '+' and '*')
+            code = code.rstrip('+*')
+
+            if code not in valid_codes:
                 continue
 
             cur.execute("""
@@ -231,7 +241,7 @@ def import_txt():
 
 if __name__ == "__main__":
     create_tables()
-    import_xml()
+    # import_xml()
     import_txt()
 
     cur.close()
