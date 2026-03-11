@@ -29,16 +29,9 @@ docker compose --profile import run --rm importer
 
 ## 3. App starten
 
-Sobald der Import erfolgreich war (oder wenn die Datenbank bereits befüllt ist), starte das Backend (FastAPI, Port 8000) und die Datenbank (Postgres, Port 5432) im Hintergrund:
+Sobald der Import erfolgreich war (oder wenn die Datenbank bereits befüllt ist), starte die gesamte Umgebung (Datenbank, Backend und Frontend) im Hintergrund:
 ```bash
-docker compose up -d db backend
-```
-
-Da das Frontend-Docker-Image machmal Hänger beim NPM Install aufweist, empfehlen wir, das Frontend lokal via Node zu starten. Öffne dazu ein neues Terminal:
-```bash
-cd src/frontend
-npm install
-npm run dev
+docker compose up -d
 ```
 
 ---

@@ -42,18 +42,21 @@ function App() {
     <div className="app-container">
       <header className="header">
         <h1>ICD-10 AI Prompt Engineer</h1>
-        <p>Analyze symptoms using official BfArM data and Gemini AI</p>
+        <p>Analysiere Symptome mit offiziellen BfArM Daten und der Gemini KI</p>
       </header>
 
       <main className="main-content">
         <section className="input-section">
-          <h2>Patient Symptoms</h2>
+          <h2>Symptome des Patienten</h2>
+          <p className="instruction-text">
+            Um eine optimale Diagnose-Einschätzung zu gewährleisten, beschreiben Sie bitte alle Symptome, deren zeitlichen Verlauf und mögliche Vorerkrankungen so präzise und detailliert wie möglich.
+          </p>
           <form onSubmit={handleDiagnose}>
             <textarea
               className="symptom-input"
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
-              placeholder="E.g., Patient complains about severe headache, nausea, and sensitivity to light since yesterday morning..."
+              placeholder="Z.B.: Patient klagt über starke, pulsierende Kopfschmerzen, Übelkeit und extreme Lichtempfindlichkeit seit gestern Morgen..."
               rows={6}
             />
             <button
@@ -61,7 +64,7 @@ function App() {
               className={`submit-btn ${loading ? 'loading' : ''}`}
               disabled={loading || !symptoms.trim()}
             >
-              {loading ? 'Analyzing...' : 'Generate Diagnosis'}
+              {loading ? 'Analysiere...' : 'Diagnose Generieren'}
             </button>
           </form>
 
@@ -75,7 +78,7 @@ function App() {
         {result && (
           <section className="results-section">
             <div className="card ai-response">
-              <h2>🤖 Gemini Analysis</h2>
+              <h2>🤖 Gemini Analyse</h2>
               <div className="markdown-body">
                 {/* Simplified rendering - in a real app you'd use react-markdown */}
                 {result.llm_answer.split('\n').map((line, i) => (
@@ -85,8 +88,8 @@ function App() {
             </div>
 
             <div className="card source-data">
-              <h2>📚 Official BfArM Sources Used</h2>
-              <p className="source-subtitle">Top vector search results for your input:</p>
+              <h2>📚 Verwendete offizielle BfArM Quellen</h2>
+              <p className="source-subtitle">Beste Vektorsuch-Treffer auf Basis deiner Eingabe:</p>
               <ul className="source-list">
                 {result.sources?.map((item, index) => (
                   <li key={index} className="source-item">
