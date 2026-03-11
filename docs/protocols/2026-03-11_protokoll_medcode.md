@@ -95,3 +95,19 @@
 - Festhalten offener Fragen  
 
 - Planung der nächsten Iteration und weiterer Meetings  
+
+## Protokoll
+- 
+
+## Beschlüsse
+Stef
+- [Beschluss] – *[Verantwortlich]*
+- [Beschluss] – *[Verantwortlich]*
+
+## Offene Punkte
+
+- [ ] [Aufgabe] – *[Verantwortlich]*
+
+## Nächster Termin
+
+**[Datum]** – [Ort]
