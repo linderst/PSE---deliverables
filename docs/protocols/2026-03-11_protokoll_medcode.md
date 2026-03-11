@@ -129,5 +129,8 @@ Stefan Linder stösst zum Meeting dazu und präsentiert eine UI-Demo der bestehe
 
 ## Nächster Termin
 
-**[Datum]** – [Ort]
+Am 25.03.2026 zwischen 13:00 - 19:00 Uhr
+Ort: Büro Medcode
+
+
 
