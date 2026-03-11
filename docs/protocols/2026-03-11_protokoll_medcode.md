@@ -111,6 +111,8 @@ Der Prototyp demonstriert die Kernfunktionalität: semantische Suche sowie Verha
 
 Stefan Linder stösst zum Meeting dazu und präsentiert eine UI-Demo der bestehenden Plattform.
 
+Das Meeting ist um 19:10 Uhr beendet.
+
 ### Zusätzliche Anforderungen
 
 - Bei einer Suche sollen fünf verwandte Vorschläge angezeigt werden
@@ -131,6 +133,7 @@ Stefan Linder stösst zum Meeting dazu und präsentiert eine UI-Demo der bestehe
 
 Am 25.03.2026 zwischen 13:00 - 19:00 Uhr
 Ort: Büro Medcode
+
 
 
 
