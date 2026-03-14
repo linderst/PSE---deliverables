@@ -30,12 +30,16 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      MEILI_URL: http://meilisearch:7700
+      MEILI_KEY: ${MEILI_KEY:-masterKey}
     volumes:
       - ./src/backend:/app
       - model_cache:/root/.cache
     depends_on:
       db:
         condition: service_healthy
+      meilisearch:
+        condition: service_started
 
   frontend:
     build:
@@ -71,7 +75,41 @@ services:
     profiles:
       - import
 
+  meili-importer:
+    build:
+      context: ./src/backend
+      dockerfile: ../../docker/backend/Dockerfile
+    command: python import_meili.py
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MEILI_URL: http://meilisearch:7700
+      MEILI_KEY: ${MEILI_KEY:-masterKey}
+    volumes:
+      - ./src/backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
+    profiles:
+      - import
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_KEY:-masterKey}
+      MEILI_ENV: development
+    volumes:
+      - meili_data:/meili_data
+
 volumes:
   db_data:
   model_cache:
   frontend_modules:
+  meili_data:
