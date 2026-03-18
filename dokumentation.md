@@ -22,13 +22,14 @@ Das Python-Skript für den Import der offiziellen BfArM XML- und TXT-Kataloge in
 ## 3. Backend & KI API (`main.py`)
 Die komplette FastAPI-Struktur des Backends wurde geschrieben:
 - **CORS-Middleware**: Native Freigabe konfiguriert, damit das separate React-Frontend im Browser auf Port `8000` via localhost kommunizieren darf.
-- **Vektorsuche (Cosimus-Ähnlichkeit)**: Eine hochperformante PostgreSQL Abfrage implementiert (`ORDER BY e.embedding <=> %s::vector LIMIT 5;`), die den Text-Input des Arztes als dynamischen Vektor gegen die tausenden ICD-10 BfArM-Vektoren abgleicht.
+- **Hybride Suche (Meilisearch + PGVector)**: Die primäre Suchmaschine wurde auf **Meilisearch** umgestellt. Meilisearch bietet extrem schnelle, tippfehlertolerante und synonymbasierte Suchergebnisse. Die Vektorsuche (`pgvector` mit Cosinus-Ähnlichkeit) dient nun als intelligenter Fallback, falls Meilisearch keine passenden Ergebnisse liefert oder nicht erreichbar ist. Zusätzlich erkennt das System direkte ICD-Codes (wie z.B. `R51`) für sofortige Treffer.
 - **Prompt Engineering Pipeline**:
   1. Der freie Text des Users wird eingebettet.
   2. Die 5 besten Treffer aus der DB werden evaluiert.
   3. Diese Treffer (ICD Code + Diagnosename + Mathematische Übereinstimmung) werden zusammen mit dem initialen User-Input und einer expliziten System-Anweisung zu einem intelligenten Kontext-Prompt konkateniert.
   4. Der Prompt wird live an das **Google Gemini 2.5 Flash** Modell gesendet.
 - Neben dem reinen `/api/diagnose` LLM Endpunkt wurde auch ein technischer `/api/search` Endpunkt gebaut, der nur die rohen lokalen Vektoren zurückgibt, um die Qualität der Embeddings isoliert testen zu können.
+- **Subcode-Hierarchie (`/api/subcodes`)**: Die SQL-Abfrage wurde optimiert, sodass bei Abfragen eines Eltern-Codes (z. B. `I10`) nur direkte Untercodes (wie `I10.x`) und keine weiteren Verschachtelungen ausgegeben werden.
 
 ---
 
@@ -40,3 +41,4 @@ Das rudimentäre Vite "Counter"-Template aus der Docker-Installation wurde durch
   - Besonderer Fokus auf die Lösung des 422 (Unprocessable Entity) Payload-Typisierungsfehlers, sodass saubere JSONs gemäss Pydantic Schema übermittelt werden.
   - Behebung von Crashes bei Array-Mappings der LLM Responses (Zuweisung `result.sources`).
 - **Styling (`App.css` & `index.css`)**: Implementierung eines responsiven, cleanen Designs, das offizielle BfArM-Quellen und Gemini's AI-Antwort übersichtlich in strukturierten Cards aufbereitet.
+- **Lokalisierung**: Alle Platzhaltertexte und Buttons im Frontend wurden ins Deutsche übersetzt ("Symptome eingeben...", "Diagnose erstellen"), um die App nutzerfreundlicher zu gestalten.

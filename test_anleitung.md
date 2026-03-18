@@ -16,14 +16,15 @@ Diese Anleitung beschreibt, wie du das Projekt lokal startest und das Prompt-Eng
 2. Öffne die `.env` Datei und trage deinen gültigen Google Gemini API Key bei `GEMINI_API_KEY` ein.
 
 ### 2.2 Datenbank & Import starten
-Das Projekt benötigt die hochgeladenen BfArM ICD-10 Daten in der lokalen PostgreSQL-Vektordatenbank.
+Das Projekt benötigt die hochgeladenen BfArM ICD-10 Daten in der lokalen PostgreSQL-Vektordatenbank sowie im Meilisearch-Suchindex.
 
 Führe im Hauptverzeichnis des Projekts aus:
 ```bash
-docker compose --profile import build importer
+docker compose --profile import build
 docker compose --profile import run --rm importer
+docker compose --profile import run --rm meili-importer
 ```
-*Hinweis: Der Import kann ca. 30 Minuten dauern, da über 100.000 vektorielle Text-Embeddings durch das PyTorch-Modell lokal berechnet werden.*
+*Hinweis: Der PGVector-Import durch das PyTorch-Modell kann ca. 30 Minuten dauern. Der anschließende Meilisearch-Import benötigt in der Regel nur wenige Sekunden bis Minuten.*
 
 ---
 
@@ -40,8 +41,8 @@ docker compose up -d
 Gehe in deinem Browser auf **http://localhost:5173**.
 
 1. Tippe freitextliche Symptome in das Textfeld (z.B. *"pulsierende Kopfschmerzen, Übelkeit und Lichtempfindlichkeit"*).
-2. Klicke auf **Generate Diagnosis**.
-3. Du erhältst eine Diagnose-Empfehlung von der Gemini KI und siehst weiter unten genau, welche Top-Vektor-Matches aus den offiziellen BfArM Datenbasis als Ground Truth / System-Prompt an die LLM geschickt wurden.
+2. Klicke auf **Diagnose erstellen**.
+3. Du erhältst eine Diagnose-Empfehlung von der Gemini KI und siehst weiter unten genau, welche Top-Vektor-Matches aus der offiziellen BfArM Datenbasis als Ground Truth / System-Prompt an das LLM geschickt wurden.
 
 ```bash
 # Um alle Docker Container am Ende wieder zu stoppen:
