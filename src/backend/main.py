@@ -370,6 +370,38 @@ def search_refined(q: str, limit: int = 5):
         expanded_query = q + " " + gemini_response.strip()
         print(f"[refined] Original: '{q}' → Gemini expanded: '{gemini_response.strip()}'")
 
+        # Step 2: Try Meilisearch with the extracted expert terms (Proposal C)
+        expert_terms = gemini_response.strip().replace(",", " ")
+        if meili_index is not None:
+            try:
+                ms_res = meili_index.search(expert_terms, {
+                    "limit": limit * 3,
+                    "attributesToRetrieve": ["code", "title"],
+                    "showRankingScore": True
+                })
+                hits = ms_res.get("hits", [])
+                if hits:
+                    seen = {}
+                    for hit in hits:
+                        code3 = hit["code"][:3]
+                        if code3 not in seen:
+                            seen[code3] = SearchResult(
+                                code=code3,
+                                title=hit.get("title") or "Unbekannte Diagnose",
+                                score=round(hit.get("_rankingScore", 0.5), 3)
+                            )
+                        if len(seen) >= limit:
+                            break
+                    
+                    # If Meilisearch found highly relevant hits using medical terms, return them
+                    best_match = list(seen.values())[0] if seen else None
+                    if best_match and best_match.score >= 0.65:
+                        print(f"[refined-meili] Strong match found for expert terms: {best_match.code} ({best_match.score})")
+                        return SearchResponse(results=list(seen.values()))
+            except Exception as e:
+                print(f"[refined-meili] Error: {e}")
+
+        # Step 3: If Meilisearch didn't find a strong match, run the heavy vector search
         results = _run_vector_search(expanded_query, limit, conn)
         return SearchResponse(results=results[:limit])
 
