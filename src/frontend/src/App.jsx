@@ -236,10 +236,6 @@ function App() {
           <h1>medcode.ch</h1>
           <p>Diagnosensuche</p>
         </div>
-        <div className="sidebar-section">Letzte Suchen</div>
-        <div className="history-list">
-          <div className="history-empty">Verlauf wird für diese Sitzung nicht gespeichert.</div>
-        </div>
         <a 
           href="https://extradoc.ch" 
           target="_blank" 
