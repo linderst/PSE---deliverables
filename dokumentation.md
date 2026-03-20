@@ -15,8 +15,11 @@ Dieses Dokument bietet einen detaillierten, technischen Überblick über die fer
 ## 2. Backend & KI API (`main.py`)
 Das Backend (FastAPI) fungiert als intelligenter Orchestrator zwischen der ICD-10 Datenbank und der **Google Gemini 2.5 Flash** KI:
 
-- **Hybride Suche (`/api/search`)**: Die primäre Suche erfolgt über **Meilisearch** (fehlertolerant & synonymbasiert). Die lokale Vektorsuche (`pgvector` mit Kosinus-Ähnlichkeit) dient als intelligenter Fallback. Direkte ICD-Codes (wie `R51`) werden sofort erkannt.
-- **KI-Verfeinerte Suche (`/api/search/refined`)**: Wenn die reguläre Suche unsicher ist (Score < 0.75), extrahiert Gemini aus dem Laien-Text in Echtzeit 5 medizinische Fachbegriffe und wiederholt die Suche in der Datenbank, um die Trefferquote massiv zu erhöhen.
+- **Der 4-stufige Diagnose-Suchalgorithmus (Backend-Kaskade)**: Die Suche verwendet eine hochperformante Fallback-Kette, um Latenz und KI-Kosten minimal zu halten:
+  1. **Direct Match Lookup (Regex)**: Zeigt die Eingabe das Muster eines ICD-Codes (z. B. `I10`), wird dieser sofort in 1ms als Exact Match aus der Datenbank abgefragt ("Zero-Click Search").
+  2. **Meilisearch (Text)**: Bei Text-Eingaben wird zuerst die Meilisearch Suchmaschine konsultiert. Sie ist fehlertolerant und rasend schnell, deckt aber nur bekannte Wortüberschneidungen ab.
+  3. **PGVector (Semantik)**: Findet Meilisearch keine exakten Wörter, greift die lokale Vektordatenbank ein. Ein KI-Modell (`paraphrase-multilingual-MiniLM-L12-v2`) versteht die *inhaltliche Bedeutung* der Symptome (Raumdistanz). Zusätzlich sorgt ein intelligentes Custom-Clustering in SQL (`0.6 * MAX + 0.4 * AVG`) dafür, dass jene Kategorien gewinnen, deren Untercodes alle gut zum Suchbegriff passen.
+  4. **LLM-Refinement (Gemini Fallback)**: Ist die Zuversicht des besten Treffers < 75%, geht das System in einen animierten Ladescreen über. Google Gemini analysiert den Text wie ein echter Arzt und extrahiert exakt 5 hochspezifische lateinisch-medizinische Fachbegriffe. Diese Begriffe werden als "Boost" nochmals gegen Meilisearch (und bei Misserfolg PGVector) geworfen, was extrem akkurate Treffer selbst bei langem Laien-Storytelling erzeugt.
 - **Multi-Prompt Architecture**: Die Analyse wird nicht durch einen riesigen Prompt, sondern durch voneinander getrennte Endpunkte generiert:
   1. `/api/chat/explain`: Erklärt die Diagnose laienverständlich.
   2. `/api/chat/specialist`: Nennt den zuständigen Arzt/Spezialisten.
