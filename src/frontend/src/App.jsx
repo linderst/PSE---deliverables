@@ -4,6 +4,8 @@ import './App.css';
 // Using Vite's environment variables or defaulting to localhost:8000
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
+const LoadingDots = () => <span className="typing-dots" style={{letterSpacing: '1px'}}><span>.</span><span>.</span><span>.</span></span>;
+
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('hero'); // 'hero' or 'results'
@@ -14,6 +16,7 @@ function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchRefined, setSearchRefined] = useState(false); // true when Gemini improved results
   const [searchError, setSearchError] = useState(null);
+  const [longLoading, setLongLoading] = useState(false); // true when waiting for Gemini > 2.5s
 
   // Blocks state
   const [explain, setExplain] = useState({ loading: false, data: null, error: null });
@@ -32,6 +35,16 @@ function App() {
   const [subcodes, setSubcodes] = useState([]);
   const [subcodesLoading, setSubcodesLoading] = useState(false);
   const [subcodesOpen, setSubcodesOpen] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (searchLoading) {
+      timer = setTimeout(() => setLongLoading(true), 2500);
+    } else {
+      setLongLoading(false);
+    }
+    return () => clearTimeout(timer);
+  }, [searchLoading]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,41 +119,51 @@ function App() {
       }
 
       const top = results[0];
-      setCurrentCondition({ code: top.code, title: top.title, version: top.version, score: top.score });
-      if (results.length > 1) setOtherMatches(results.slice(1));
-      setSearchLoading(false);
-
-      // Fire 3 content blocks
-      const question = `${top.code}: ${top.title}`;
-      fetchBlock('/chat/explain', question, setExplain);
-      fetchBlock('/chat/specialist', question, setSpecialist);
-      fetchBlock('/chat/guidance', question, setGuidance);
-
-      // In parallel: fire Gemini-refined search — but ONLY when the initial
-      // confidence is low (< 0.75). If Meilisearch is already confident, skip.
       const REFINE_THRESHOLD = 0.75;
-      if ((top.score || 0) < REFINE_THRESHOLD) {
-        fetch(`${API}/search/refined?q=${encodeURIComponent(q)}&limit=5`)
-          .then(r => r.json())
-          .then(refinedData => {
-            const refined = refinedData.results || [];
-            if (!refined.length) return;
+
+      // If confidence is high, show immediately and trigger blocks
+      if ((top.score || 0) >= REFINE_THRESHOLD) {
+        setCurrentCondition({ code: top.code, title: top.title, version: top.version, score: top.score });
+        if (results.length > 1) setOtherMatches(results.slice(1));
+        setSearchLoading(false);
+
+        const question = `${top.code}: ${top.title}`;
+        fetchBlock('/chat/explain', question, setExplain);
+        fetchBlock('/chat/specialist', question, setSpecialist);
+        fetchBlock('/chat/guidance', question, setGuidance);
+      } else {
+        // Low confidence: wait for AI Gemini refinement to avoid showing garbage with low %
+        try {
+          const refinedRes = await fetch(`${API}/search/refined?q=${encodeURIComponent(q)}&limit=5`);
+          const refinedData = await refinedRes.json();
+          const refined = refinedData.results || [];
+          
+          if (refined.length > 0) {
             const refinedTop = refined[0];
-            // Only swap if Gemini found a meaningfully different top result
-            if (refinedTop.code !== top.code) {
-              setCurrentCondition({ code: refinedTop.code, title: refinedTop.title, version: refinedTop.version, score: refinedTop.score });
-              setOtherMatches(refined.slice(1));
-              setSearchRefined(true);
-              const refinedQuestion = `${refinedTop.code}: ${refinedTop.title}`;
-              setExplain({ loading: true, data: null, error: null });
-              setSpecialist({ loading: true, data: null, error: null });
-              setGuidance({ loading: true, data: null, error: null });
-              fetchBlock('/chat/explain', refinedQuestion, setExplain);
-              fetchBlock('/chat/specialist', refinedQuestion, setSpecialist);
-              fetchBlock('/chat/guidance', refinedQuestion, setGuidance);
-            }
-          })
-          .catch(() => {}); // Silently ignore refinement errors
+            setCurrentCondition({ code: refinedTop.code, title: refinedTop.title, version: refinedTop.version, score: refinedTop.score });
+            if (refined.length > 1) setOtherMatches(refined.slice(1));
+            setSearchRefined(true);
+            setSearchLoading(false);
+
+            const refinedQuestion = `${refinedTop.code}: ${refinedTop.title}`;
+            fetchBlock('/chat/explain', refinedQuestion, setExplain);
+            fetchBlock('/chat/specialist', refinedQuestion, setSpecialist);
+            fetchBlock('/chat/guidance', refinedQuestion, setGuidance);
+            return;
+          }
+        } catch (e) {
+          // If Gemini fails, silently fall through to the original result
+        }
+
+        // Absolute Fallback: if Gemini failed or found nothing, show the initial weak result
+        setCurrentCondition({ code: top.code, title: top.title, version: top.version, score: top.score });
+        if (results.length > 1) setOtherMatches(results.slice(1));
+        setSearchLoading(false);
+
+        const question = `${top.code}: ${top.title}`;
+        fetchBlock('/chat/explain', question, setExplain);
+        fetchBlock('/chat/specialist', question, setSpecialist);
+        fetchBlock('/chat/guidance', question, setGuidance);
       }
 
 
@@ -297,11 +320,21 @@ function App() {
               {/* Primary match */}
               <div className="match-card">
                 <div className="match-content">
-                  <div className="match-code">{searchLoading ? '…' : (currentCondition ? currentCondition.code : '?')}</div>
+                  <div className="match-code">{searchLoading ? <LoadingDots /> : (currentCondition ? currentCondition.code : '?')}</div>
                   <div className="match-info">
-                    <div className="match-title">
-                      {searchLoading ? 'Suche läuft…' : (currentCondition ? currentCondition.title : searchError)}
+                    <div className="match-title" style={{ display: 'flex', alignItems: 'center' }}>
+                      {searchLoading ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div className="spinner" style={{width: '20px', height: '20px', borderWidth: '3px'}}></div>
+                          <span>KI-Diagnose läuft<LoadingDots /></span>
+                        </div>
+                      ) : (currentCondition ? currentCondition.title : searchError)}
                     </div>
+                    {searchLoading && longLoading && (
+                      <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '8px', animation: 'slide-up-fade 0.5s ease-out forwards', pointerEvents: 'none' }}>
+                        Detaillierte Analyse deines komplexeren Symptoms...
+                      </div>
+                    )}
                     <div className="match-meta">
                       {currentCondition && `ICD-10-GM ${currentCondition.version}`}
                     </div>
