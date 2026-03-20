@@ -1,44 +1,36 @@
-# Projektdokumentation: ICD-10 Prompt Engineer Backend & Frontend
-**Datum:** 10. März 2026
+# Projektdokumentation: ICD-10 Prompt Engineer Backend & Frontend (V1.0)
+**Datum:** 20. März 2026
 
-Dieses Dokument fasst alle technischen Anpassungen, Fehlerbehebungen und Implementierungen des heutigen Tages zusammen, die nötig waren, um das KI-gestützte Diagnosesystem auf Basis der offiziellen BfArM ICD-10-Daten bereitzustellen.
-
----
-
-## 1. Datenbank-Schema & Vector Dimensions (`database.sql`)
-- **Fehlerbehebung (Dimension Mismatch)**: Die Tabelle `icd_embedding` wurde ursprünglich mit einer Vektor-Dimension von `768` konzipiert.
-- **Lösung**: Da das verwendete Open-Source SentenceTransformer Modell (`paraphrase-multilingual-MiniLM-L12-v2`) jedoch Matrizen mit 384 Dimensionen generiert, wurde das Schema auf `embedding vector(384)` korrigiert, um pgvector-Crashes beim Import zu verhindern.
+Dieses Dokument bietet einen detaillierten, technischen Überblick über die fertige Version 1.0 des KI-gestützten Diagnosesystems – basierend auf der offiziellen ICD-10 Datenbasis des BfArM.
 
 ---
 
-## 2. Daten-Importer (`import_icd.py`)
-Das Python-Skript für den Import der offiziellen BfArM XML- und TXT-Kataloge ins Docker-Backend wurde signifikant robuster gestaltet:
-- **Foreign Key Violation Fix**: Einige ICD-Codes in der rein alphabetischen TXT-Datei (z.B. `A01.0+` oder Kürzelspezifische Varianten mit Sternchen `*`) besaßen keine exakte Entsprechung in den systematischen XML-Hauptklassen. Dies führte beim Insert der Synonyme zu PostgreSQL Abstürzen.
-- **Datenbereinigung**: Das Skript bereinigt nun aktiv die Regex und Anhängsel der Strings mittels `code.rstrip('+*')`.
-- **Intelligentes Überspringen**: Unbekannte Synonym-Codes, die vom BfArM alphabetisch geführt, aber vom XML-Parser nicht geladen wurden, werden nun intelligent gefiltert (`valid_codes` Set-Abgleich). Fehlerhafte TXT-Zeilen stören so den mehrstündigen Importprozess nicht länger.
+## 1. Datenbank-Schema & Importer (`database.sql`, `import_icd.py`, `import_meili.py`)
+- **Vektor-Dimensionen**: Die Tabelle `icd_embedding` nutzt das Schema `embedding vector(384)`, passgenau für das verwendete Open-Source SentenceTransformer Modell (`paraphrase-multilingual-MiniLM-L12-v2`).
+- **Importer-Härtung (`import_icd.py`)**: Das Skript bereinigt Regex und fehlerhafte Anhängsel der BfArM-Kataloge (z.B. `code.rstrip('+*')`). Unbekannte Codes werden intelligent abgefangen, um PostgreSQL-Abstürze bei unvollständigen XML-Knoten zu vermeiden.
+- **Meilisearch (`import_meili.py`)**: Ein dedizierter Importer speichert ICD-Codes samt Titeln in der hochperformanten Suchmaschine Meilisearch für schnelle Text-Indizierung.
 
 ---
 
-## 3. Backend & KI API (`main.py`)
-Die komplette FastAPI-Struktur des Backends wurde geschrieben:
-- **CORS-Middleware**: Native Freigabe konfiguriert, damit das separate React-Frontend im Browser auf Port `8000` via localhost kommunizieren darf.
-- **Hybride Suche (Meilisearch + PGVector)**: Die primäre Suchmaschine wurde auf **Meilisearch** umgestellt. Meilisearch bietet extrem schnelle, tippfehlertolerante und synonymbasierte Suchergebnisse. Die Vektorsuche (`pgvector` mit Cosinus-Ähnlichkeit) dient nun als intelligenter Fallback, falls Meilisearch keine passenden Ergebnisse liefert oder nicht erreichbar ist. Zusätzlich erkennt das System direkte ICD-Codes (wie z.B. `R51`) für sofortige Treffer.
-- **Prompt Engineering Pipeline**:
-  1. Der freie Text des Users wird eingebettet.
-  2. Die 5 besten Treffer aus der DB werden evaluiert.
-  3. Diese Treffer (ICD Code + Diagnosename + Mathematische Übereinstimmung) werden zusammen mit dem initialen User-Input und einer expliziten System-Anweisung zu einem intelligenten Kontext-Prompt konkateniert.
-  4. Der Prompt wird live an das **Google Gemini 2.5 Flash** Modell gesendet.
-- Neben dem reinen `/api/diagnose` LLM Endpunkt wurde auch ein technischer `/api/search` Endpunkt gebaut, der nur die rohen lokalen Vektoren zurückgibt, um die Qualität der Embeddings isoliert testen zu können.
-- **Subcode-Hierarchie (`/api/subcodes`)**: Die SQL-Abfrage wurde optimiert, sodass bei Abfragen eines Eltern-Codes (z. B. `I10`) nur direkte Untercodes (wie `I10.x`) und keine weiteren Verschachtelungen ausgegeben werden.
+## 2. Backend & KI API (`main.py`)
+Das Backend (FastAPI) fungiert als intelligenter Orchestrator zwischen der ICD-10 Datenbank und der **Google Gemini 2.5 Flash** KI:
+
+- **Hybride Suche (`/api/search`)**: Die primäre Suche erfolgt über **Meilisearch** (fehlertolerant & synonymbasiert). Die lokale Vektorsuche (`pgvector` mit Kosinus-Ähnlichkeit) dient als intelligenter Fallback. Direkte ICD-Codes (wie `R51`) werden sofort erkannt.
+- **KI-Verfeinerte Suche (`/api/search/refined`)**: Wenn die reguläre Suche unsicher ist (Score < 0.75), extrahiert Gemini aus dem Laien-Text in Echtzeit 5 medizinische Fachbegriffe und wiederholt die Suche in der Datenbank, um die Trefferquote massiv zu erhöhen.
+- **Multi-Prompt Architecture**: Die Analyse wird nicht durch einen riesigen Prompt, sondern durch voneinander getrennte Endpunkte generiert:
+  1. `/api/chat/explain`: Erklärt die Diagnose laienverständlich.
+  2. `/api/chat/specialist`: Nennt den zuständigen Arzt/Spezialisten.
+  3. `/api/chat/guidance`: Beschreibt erste Behandlungsschritte.
+- **Kontext-Dialog (`/api/chat/contextual`)**: User können Nachfragen zur gefundenen Diagnose stellen; der Chatbot hält den Kontext des spezifischen ICD-Codes streng im Gedächtnis.
+- **Subcode-Hierarchie (`/api/subcodes`)**: Optimierte SQL-Abfrage liefert nur direkte Untercodes (z.B. `I10.x`) samt Relevanz (Synonym-Count) ohne tiefe Verschachtelungen.
 
 ---
 
-## 4. Frontend & Benutzeroberfläche (React + Vite)
-Das rudimentäre Vite "Counter"-Template aus der Docker-Installation wurde durch eine moderne, fertige Medizin-App ausgetauscht.
-- **Vite Config (`vite.config.js`)**: Die Dev-Server Bindung wurde explizit auf `server: { host: true }` gestellt, damit sie ausserhalb von isolierten Docker-Containern im Hostnetzwerk (Mac) erreichbar wird.
-- **App-Logik (`App.jsx`)**: 
-  - Eine saubere, asynchrone React-Komponente mit Loading-States, Fehler-Behandlung und Fetch-Requests gegen das FastAPI Backend (`/api/diagnose`).
-  - Besonderer Fokus auf die Lösung des 422 (Unprocessable Entity) Payload-Typisierungsfehlers, sodass saubere JSONs gemäss Pydantic Schema übermittelt werden.
-  - Behebung von Crashes bei Array-Mappings der LLM Responses (Zuweisung `result.sources`).
-- **Styling (`App.css` & `index.css`)**: Implementierung eines responsiven, cleanen Designs, das offizielle BfArM-Quellen und Gemini's AI-Antwort übersichtlich in strukturierten Cards aufbereitet.
-- **Lokalisierung**: Alle Platzhaltertexte und Buttons im Frontend wurden ins Deutsche übersetzt ("Symptome eingeben...", "Diagnose erstellen"), um die App nutzerfreundlicher zu gestalten.
+## 3. Frontend & Benutzeroberfläche (React + Vite)
+Das Frontend (`App.jsx`, `App.css`) ist eine produktionsreife, reaktive SPA (Single Page Application):
+
+- **Struktur & Design**: Cleanes, responsives Medical-Design, das Suchergebnisse (mit Genauigkeits-Tachometer), BfArM-Unterkategorien und Gemini-Antworten in strukturierte "Cards" aufteilt.
+- **Dynamisches Rendering**: Parallele Lade-Zustände (Skeleton-Loader) für die 3 Gemini-Prompts, sodass der User nicht auf die Gesamtanalyse warten muss.
+- **Lokalisierung**: Vollständig ins Deutsche übersetztes User-Interface ("Diagnose erstellen", "Symptome eingeben").
+- **Privacy & UX (V1.0 Update)**: Die alte Suchhistorie ("Verlauf") in der Sidebar wurde bewusst entfernt, um den Code zu entschlacken und Datenschutzbedenken bei Diagnosesuchen vorzubeugen. Die App startet schlank und fokussiert.
+- **Netzwerk**: Fehlerhafte JSON-Payloads (422 Error) wurden korrigiert und Pydantic-konform an das Backend übermittelt. CORS und Vite Config (`host: true`) erlauben reibungslose Zugriffe im lokalen Netzwerk.
