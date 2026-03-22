@@ -36,3 +36,13 @@ CREATE TABLE icd_embedding (
     source_id INT,            -- reference id
     embedding vector(384)     -- depends on model, CHECK VECTOR SIZE!
 );
+
+-- Cache for AI explanations
+CREATE TABLE icd_ai_cache (
+    id SERIAL PRIMARY KEY,
+    icd_code VARCHAR(10) NOT NULL REFERENCES icd_class(code),
+    prompt_type VARCHAR(20) NOT NULL, -- 'explain', 'specialist', 'guidance'
+    response_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (icd_code, prompt_type)
+);
