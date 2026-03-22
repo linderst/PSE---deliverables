@@ -411,23 +411,66 @@ def search_refined(q: str, limit: int = 5):
 
 
 
+def handle_cached_chat(req: ChatRequest, prompt_type: str, prompt_template: str, disclaimer: bool = False) -> ChatResponse:
+    # 1. Extract code "I10: Essentielle..." -> "I10"
+    code = req.question.split(":")[0].strip()[:10]
+    
+    # 2. Check Cache
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT response_text FROM icd_ai_cache WHERE icd_code = %s AND prompt_type = %s", (code, prompt_type))
+            row = cur.fetchone()
+            if row:
+                print(f"[cache-hit] returned {prompt_type} for {code}")
+                return ChatResponse(answer=row[0], disclaimer=disclaimer)
+        except Exception as e:
+            print(f"[cache-error] reading {e}")
+        finally:
+            conn.close()
+
+    # 3. Ask Gemini
+    prompt = prompt_template.format(question=req.question)
+    ans = ask_gemini(prompt)
+
+    # 4. Save to Cache
+    if ans and not ans.startswith("Error") and not ans.startswith("Gemini API key"):
+        conn = get_db_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO icd_ai_cache (icd_code, prompt_type, response_text) 
+                    VALUES (%s, %s, %s) 
+                    ON CONFLICT (icd_code, prompt_type) DO NOTHING
+                """, (code, prompt_type, ans))
+                conn.commit()
+                print(f"[cache-miss] saved {prompt_type} for {code}")
+            except Exception as e:
+                print(f"[cache-error] writing {e}")
+                conn.rollback()
+            finally:
+                conn.close()
+
+    return ChatResponse(answer=ans, disclaimer=disclaimer)
+
+
 @app.post("/api/chat/explain", response_model=ChatResponse)
 def chat_explain(req: ChatRequest):
-    prompt = f"Erkläre die folgende medizinische Diagnose verständlich für einen Laien in maximal 3-4 Sätzen:\nDiagnose: {req.question}\nAntworte professionell und empathisch."
-    ans = ask_gemini(prompt)
-    return ChatResponse(answer=ans, disclaimer=True)
+    prompt = "Erkläre die folgende medizinische Diagnose verständlich für einen Laien in maximal 3-4 Sätzen:\nDiagnose: {question}\nAntworte professionell und empathisch."
+    return handle_cached_chat(req, "explain", prompt, disclaimer=True)
 
 @app.post("/api/chat/specialist", response_model=ChatResponse)
 def chat_specialist(req: ChatRequest):
-    prompt = f"Welcher Facharzt oder Spezialist ist für die Diagnose '{req.question}' zuständig und wann sollte man diesen aufsuchen?\nAntworte kurz und prägnant in 2-3 Sätzen."
-    ans = ask_gemini(prompt)
-    return ChatResponse(answer=ans)
+    prompt = "Welcher Facharzt oder Spezialist ist für die Diagnose '{question}' zuständig und wann sollte man diesen aufsuchen?\nAntworte kurz und prägnant in 2-3 Sätzen."
+    return handle_cached_chat(req, "specialist", prompt)
 
 @app.post("/api/chat/guidance", response_model=ChatResponse)
 def chat_guidance(req: ChatRequest):
-    prompt = f"Was sind die gängigen Behandlungsmethoden oder erste ärztliche Schritte bei der Diagnose '{req.question}'?\nAntworte in 3-4 Sätzen übersichtlich. Erwähne, dass dies keinen Arztbesuch ersetzt."
-    ans = ask_gemini(prompt)
-    return ChatResponse(answer=ans)
+    prompt = "Was sind die gängigen Behandlungsmethoden oder erste ärztliche Schritte bei der Diagnose '{question}'?\nAntworte in 3-4 Sätzen übersichtlich. Erwähne, dass dies keinen Arztbesuch ersetzt."
+    return handle_cached_chat(req, "guidance", prompt)
+
 
 @app.post("/api/chat/contextual", response_model=ChatResponse)
 def chat_contextual(req: ContextualChatRequest):
