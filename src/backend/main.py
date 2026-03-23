@@ -227,8 +227,14 @@ def search_diagnoses(q: str, limit: int = 5):
                         break
 
                 if seen:
-                    print(f"[meili] '{q}' → {[r.code for r in seen.values()]}")
-                    return SearchResponse(results=list(seen.values()))
+                    best_match = list(seen.values())[0]
+                    if best_match.score >= 0.75:
+                        print(f"[meili] '{q}' → {[r.code for r in seen.values()]}")
+                        # Only return results that meet the 0.75 threshold
+                        filtered_results = [r for r in seen.values() if r.score >= 0.75]
+                        return SearchResponse(results=filtered_results)
+                    else:
+                        print(f"[meili] Top score {best_match.score} < 0.75, falling back to pgvector")
         except Exception as e:
             print(f"[meili] Error, falling back to vector search: {e}")
 
@@ -273,6 +279,7 @@ def search_diagnoses(q: str, limit: int = 5):
         out = [
             SearchResult(code=r[0], title=r[1] or "Unbekannte Diagnose", score=float(r[2]) if r[2] else 0.0)
             for r in rows
+            if (float(r[2]) if r[2] else 0.0) >= 0.75
         ]
         return SearchResponse(results=out[:limit])
 
@@ -328,6 +335,7 @@ def _run_vector_search(q_text: str, limit: int, conn) -> list[SearchResult]:
                 score=float(row[2]) if row[2] is not None else 0.0
             )
             for row in rows
+            if (float(row[2]) if row[2] is not None else 0.0) >= 0.75
         ]
     finally:
         cur.close()
@@ -395,9 +403,10 @@ def search_refined(q: str, limit: int = 5):
                     
                     # If Meilisearch found highly relevant hits using medical terms, return them
                     best_match = list(seen.values())[0] if seen else None
-                    if best_match and best_match.score >= 0.65:
+                    if best_match and best_match.score >= 0.75:
                         print(f"[refined-meili] Strong match found for expert terms: {best_match.code} ({best_match.score})")
-                        return SearchResponse(results=list(seen.values()))
+                        filtered_results = [r for r in seen.values() if r.score >= 0.75]
+                        return SearchResponse(results=filtered_results)
             except Exception as e:
                 print(f"[refined-meili] Error: {e}")
 
