@@ -1,3 +1,5 @@
+[//]: # (this is a .md comment)
+
 # Protokoll – [Titel]
 
 **Datum:** [TT. Monat YYYY]  
@@ -6,11 +8,35 @@
 **Sitzungsleitung:** [Name]  
 **Protokoll:** [Name]
 
-## Anwesende
+## Teilnehmer
 
-[Namen, entschuldigt: Namen]
+**Entwicklungsteam:**
 
-## Protokoll
+| Name | Rolle | anwesend |
+|---|---|---|
+| Felix Buchmüller  | Key Account Manager       |x|
+| Alexander Bot     | Master Tracker            |x|
+| Stefan Linder     | Chief Deliverable Officer |x|
+| Christian Gafner  | Quality Evangelist        |x|
+| Dennis Roduner    | Leitung / Protokoll       |x|
+| Julien Chopin     | Leitung / Protokoll       |x|
+
+[//]: # (für interne Meetings, Kundenseite als comment lassen)
+[//]: # (
+    **Kundenseite:**
+    | Name | Rolle | anwesend |
+    |---|---|---|
+    | Stefan Vogt   | Geschäftsführer, Medcode GmbH |-|
+    | Simon Hölzer  | Arzt, Medcode GmbH            |-|
+    )
+
+"x" - **anwesend**  
+"-" - **entschuldigt abwesend**  
+## Traktanden
+
+| Nr. | Dauer | Traktandum | Zeitmanagement |
+|---|---|---|---|
+| 1 | XXmin | Titel | Person |
 
 ### 1 – [Traktandum]
 
@@ -20,7 +46,7 @@
 
 [Notizen]
 
-## Beschlüsse
+## Beschlussprotokoll
 
 - [Beschluss] – *[Verantwortlich]*
 
