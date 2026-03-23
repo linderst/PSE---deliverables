@@ -251,24 +251,25 @@ function App() {
     }
   };
 
+  const handleReset = () => {
+    setView('hero');
+    setSearchTerm('');
+    setCurrentCondition(null);
+    setSearchError(null);
+    setOtherMatches([]);
+    setSearchRefined(false);
+    setExplain({ loading: false, data: null, error: null });
+    setSpecialist({ loading: false, data: null, error: null });
+    setGuidance({ loading: false, data: null, error: null });
+    setDialogMessages([]);
+    setDialogInput('');
+    setIsChatOpen(false);
+    setSubcodes([]);
+    setSubcodesOpen(false);
+  };
+
   return (
     <div className="layout">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1>medcode.ch</h1>
-          <p>Diagnosensuche</p>
-        </div>
-        <a 
-          href="https://extradoc.ch" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="sidebar-extradoc-link"
-        >
-          Arztzeugnis online: extradoc.ch
-        </a>
-      </aside>
-
       {/* Main */}
       <main className="main">
         {view === 'hero' ? (
@@ -301,6 +302,15 @@ function App() {
             <div className="results-content">
               {/* Top bar with inline search */}
               <div className="results-topbar">
+                <div 
+                  className="brand-logo" 
+                  onClick={handleReset} 
+                  style={{ cursor: 'pointer', marginRight: '20px', display: 'flex', flexDirection: 'column' }}
+                  title="Zurück zum Start"
+                >
+                  <h1 style={{ fontSize: '22px', margin: 0, fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--accent)', lineHeight: 1 }}>medcode.ch</h1>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.3px', marginTop: '2px' }}>DIAGNOSEN</span>
+                </div>
                 <div className="search-wrap no-animate">
                   <input 
                     type="text" 
