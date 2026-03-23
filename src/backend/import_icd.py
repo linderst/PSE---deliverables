@@ -241,7 +241,7 @@ def import_txt():
 
 if __name__ == "__main__":
     create_tables()
-    # import_xml()
+    import_xml()
     import_txt()
 
     cur.close()
