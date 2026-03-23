@@ -46,11 +46,20 @@
 
 * soll bei allen auf den gleichen Stand funktionieren
 
+Problem macht die Vektordatenbank. Stefan hat jetzt aus dem `.gitignore` die Datenbank-XML genommen und jeder muss auf seinem PC das Vektorembedding machen.
+
 ### 2 – [Meilisearch in depth Erklärung]
 
 * Erklärung was ist Meilisearch
 * Wie funktioniert es
 * Pro - Kontra allgemein
+
+Stefan hat den aktuellen Suchalgorithmus vorgestellt. Der Ablauf ist wie folgt:
+ 
+1. Eingabe wird per Regex auf einen direkten ICD-10-Code geprüft (z. B. „I10"). Falls Treffer, wird direkt das Ergebnis zurückgegeben.
+2. Falls kein direkter Code-Treffer: Suche über Meilisearch.
+3. Falls Meilisearch 0 Treffer liefert, wird eine Vektorsuche (pgvector) ausgelöst. Diskutiert wurde, ob der Fallback bereits bei niedriger Meilisearch-Konfidenz (z. B. unter 45 %) greifen sollte, nicht erst bei 0 Treffern.
+4. Falls die Konfidenz weiterhin unter 75 % liegt, wird die Gemini-API aufgerufen, um den Eingabetext in medizinische Fachbegriffe umzuwandeln. Anschliessend wird Schritt 2 mit den neuen Begriffen wiederholt.
 
 ### 3 – [Meilisearch vs pgvector]
 
@@ -62,12 +71,22 @@ Meilisearch - PgVector
     * Hybrid
 * Beschluss
 
+Diskussion über die Rolle von pgvector im Projekt:
+ 
+- Das Tool deckt ausschliesslich ICD-10-Codes und medizinische Fachbegriffe ab – kein Nonsense.
+- Ein Fallback auf pgvector ist nötig: Beispiel „Ich habe Hodenschmerzen" liefert bei Meilisearch fälschlicherweise Treffer für „Schilddrüsen".
+- **Idee:** Die verschiedenen Such-Engines nicht nur sequenziell, sondern parallel laufen lassen und prüfen, ob die Ergebnisse besser werden.
+- **Offene Frage:** Ist pgvector für den Kunden zwingend oder optional? Soll beim nächsten Kundenmeeting geklärt werden.
 
 ### 4 - [Static Problem - extra DB?]
 
 * klaren Beschluss - was soll angezeigt/gespeichert werden
 * technische Umsetzungsansätze
 * Beschluss
+
+- Alte Suchanfragen werden bereits heute in einer separaten Tabelle gespeichert.
+- **Neues Feature-Idee: „Feedback Button"** – Falls ein schlechtes Ergebnis angezeigt wird, kann der Nutzer dies melden. Es erfolgt dann ein Reprompt über die KI mit angepasster Anfrage.
+
 
 ### 5 - [Aufgaben & next Meeting ]
 
@@ -78,16 +97,17 @@ Meilisearch - PgVector
     * mit Kunden:  
      25.3. 11:00Uhr
     * interes Meeting?
-* Ende
+
+* Aufgaben:
+- [ ] Thresholds definieren (Stefan, Christian)
+- [ ] UI anpassen (es benötigt keinen Verlauf in linker Seitenleiste) (Alex)
+- [ ] Doku schreiben (Felix, Dennis)
+- [ ] Parallelisierung überprüfen (Julien
+- [ ] Anleitungen anpassen (Docker) (Felix, Dennis)
+- [ ] Tests schreiben (wegen Fallbacks, ob pgvector nötig) (Stefa, Christian, Julien)
+- [ ] Jeder sollte es zum Laufen bringen (Alle)
 
 ## Beschlussprotokoll
 
 - [Beschluss] – *[Verantwortlich]*
 
-## Offene Punkte
-
-- [ ] [Aufgabe] – *[Verantwortlich]*
-
-## Nächster Termin
-
-**[Datum]** – [Ort]
