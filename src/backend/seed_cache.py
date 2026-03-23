@@ -59,13 +59,18 @@ for idx, row in enumerate(top_codes):
             # Sende Post-Request an das laufende eigene Docker Backend
             res = requests.post(url, json=payload)
             if res.status_code == 200:
-                print(f"  ✓ {ep:17} erfolgreich im Cache")
+                data = res.json()
+                answer = data.get("answer", "")
+                if answer.startswith("Error") or answer.startswith("Gemini API"):
+                    print(f"  x {ep:17} fehlgeschlagen (API Error: Rate Limit oder Key)")
+                else:
+                    print(f"  ✓ {ep:17} erfolgreich im Cache")
             else:
                 print(f"  x {ep:17} fehlgeschlagen ({res.status_code})")
         except Exception as e:
-            print(f"  x {ep:17} Verbindungsfehler")
+            print(f"  x {ep:17} Verbindungsfehler: {e}")
             
-        # Warten um Google's Rate Limit nicht zu verärgern
-        time.sleep(DELAY_BETWEEN_REQUESTS)
+        # Warten um Google's Rate Limit (15 RPM) zuverlässig einzuhalten
+        time.sleep(4.2)
 
 print("\nSeeding abgeschlossen! Alle 100 Top-Krankheiten sind nun in der PostgreSQL Datenbank gesichert.")
