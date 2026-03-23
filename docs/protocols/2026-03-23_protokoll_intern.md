@@ -99,7 +99,7 @@ Diskussion über die Rolle von pgvector im Projekt:
     * interes Meeting?
 
 * Aufgaben:
-- [ ] Thresholds definieren (Stefan, Christian)
+- [ ] Thresholds definieren (Stefan, Christian) (bis Mittwoch 25.03)
 - [ ] UI anpassen (es benötigt keinen Verlauf in linker Seitenleiste) (Alex)
 - [ ] Doku schreiben (Felix, Dennis)
 - [ ] Parallelisierung überprüfen (Julien
