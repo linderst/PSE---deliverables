@@ -15,10 +15,10 @@
 | Name | Rolle | anwesend |
 |---|---|---|
 | Felix Buchmüller  | Key Account Manager       |x|
-| Alexander Bot     | Master Tracker            |x|
+| Alexander Bot     | Master Tracker            |-|
 | Stefan Linder     | Chief Deliverable Officer |x|
 | Christian Gafner  | Quality Evangelist        |x|
-| Dennis Roduner    | Leitung / Protokoll       |x|
+| Dennis Roduner    | Leitung / Protokoll       |-|
 | Julien Chopin     | Leitung / Protokoll       |x|
 
 
@@ -37,7 +37,7 @@
 |---|---|---|---|
 | 1 | 5min | Begrüssung | Stefan |
 | 2 | 10min | Demo | Christian |
-| 3 | 10min | Besprechung Demo | Dennis |
+| 3 | 10min | Besprechung Demo | Julien |
 | 4 | 10min | Parallelität | Alex |
 | 5 | 20min | Planning Game 3. | Felix |
 | 6 | 5min | Abschluss | - |
@@ -129,18 +129,61 @@ Momentan haben wir serielle Hybride Architektur, jedoch die Frage ob parallel be
     * Alerts (optional)
 * Server implementierung
 
-#### Vorschläge Kunde
-
-
-
 ## Beschlussprotokoll
 
-- [Beschluss] – *[Verantwortlich]*
+* Änderungen von Simon wurden übernommen
+* Prototyp wurde positiv bewertet und gefällt
+* Docker für die Serverumgebung
 
-## Offene Punkte
+### Zentrale Erkenntnisse
 
-- [ ] [Aufgabe] – *[Verantwortlich]*
+* Hauptfokus liegt auf einer grösseren Anzahl indexierbarer Begriffe
+* Verbesserung der Auffindbarkeit (insbesondere für Suchmaschinen) ist entscheidend
+
+### SEO / Struktur der Inhalte
+
+* Einführung klarer URL-Strukturen, z. B.: `/diabetes`
+* Aufbau einer Sitemap zur besseren Indexierung
+* Erstellung einer zusätzlichen statischen Seite (Landingpage), auf der alle relevanten Begriffe gebündelt sind
+* Strukturierung der Inhalte nach:
+
+  * Krankheit (z. B. Diabetes mellitus)
+  * ICD-Code
+  * HTML-Verzeichnis
+
+### Inhalte & Verweise
+
+* Integration von Weiterleitungen auf separate Dokumente
+* Klare Verweise auf ärztliche Beratung
+* Verstärkter Fokus auf Marketing-Aspekte
+
+### Serverimplementierung
+
+* Deployment mittels Docker
+* Zugriff nach Deployment über:
+
+  * SSH
+  * Docker Extensions
+
+
+## Beschluss
+
+Als nächste Iterationsschritte wurden festgelegt:
+
+* Frontend-Anpassungen:
+
+  * Überarbeitung der Homepage
+  * Optimierung der URL-Struktur
+  * Mehr Verweise auf externe Dokumente
+
+* Erstellung von Dokumentation / Anleitung
+
+* Umsetzung von Parallelität in einem separaten Branch
+
+* Deployment auf dem Server bis Ende der Woche
+
+
 
 ## Nächster Termin
 
-**[Datum]** – [Ort]
+**[15.4.20206]** – [Länggassstrasse 31]
