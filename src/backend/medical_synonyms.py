@@ -122,6 +122,8 @@ COLLOQUIAL_EXPANSION: dict[str, list[str]] = {
     "hörverlust": ["Schwerhörigkeit", "Hypakusis", "Hörsturz"],
     "tinnitus": ["Tinnitus", "Ohrgeräusch"],
     "schnarchen": ["Schnarchen", "Schlafapnoe", "obstruktive Schlafapnoe"],
+    "kieferschmerzen": ["Kiefergelenk", "Gesichtsschmerz", "CMD", "Kiefer"],
+    "zahnschmerzen": ["Zahnschmerz", "Odontalgie", "Karies"],
 }
 
 
