@@ -64,6 +64,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       DATA_DIR: /app/data
     volumes:
       - ./src/backend:/app

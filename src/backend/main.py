@@ -3,8 +3,7 @@ import re
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psycopg2
-from sentence_transformers import SentenceTransformer
-import google.generativeai as genai
+from google import genai
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Optional
 from medical_synonyms import expand_query
@@ -29,9 +28,9 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Initialize Gemini
+genai_client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    llm_model = genai.GenerativeModel('gemini-2.5-flash')
+    genai_client = genai.Client(api_key=GEMINI_API_KEY)
 else:
     print("WARNING: GEMINI_API_KEY is not set.")
 
@@ -45,11 +44,6 @@ try:
 except Exception as e:
     meili_index = None
     print(f"WARNING: Meilisearch not available: {e}")
-
-# Initialize Embedding Model (Must match the one in import_icd.py)
-print("Loading Embedding Model...")
-embedding_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-print("Model loaded.")
 
 # --- Database Connection ---
 def get_db_connection():
@@ -100,10 +94,13 @@ class SubcodeResponse(BaseModel):
 
 # --- Helper ---
 def ask_gemini(prompt: str) -> str:
-    if not GEMINI_API_KEY:
+    if not genai_client:
         return "Gemini API key is missing. Cannot generate response."
     try:
-        response = llm_model.generate_content(prompt)
+        response = genai_client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return f"Error calling Gemini API: {e}"
@@ -167,6 +164,17 @@ def get_subcodes(code: str):
     finally:
         cur.close()
         conn.close()
+
+def _get_gemini_embedding(text: str) -> list[float]:
+    """Generate embedding using Google Gemini API instead of local model."""
+    if not genai_client:
+        return []
+    resp = genai_client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=text,
+        config={"task_type": "RETRIEVAL_QUERY"}
+    )
+    return resp.embeddings[0].values
 
 @app.get("/api/search", response_model=SearchResponse)
 def search_diagnoses(q: str, limit: int = 5):
@@ -238,6 +246,7 @@ def search_diagnoses(q: str, limit: int = 5):
         except Exception as e:
             print(f"[meili] Error, falling back to vector search: {e}")
 
+
     # ── 3. pgvector fallback ─────────────────────────────────────────────────
     conn = get_db_connection()
     if not conn:
@@ -245,7 +254,11 @@ def search_diagnoses(q: str, limit: int = 5):
 
     try:
         expanded_q = expand_query(q)
-        query_embedding = embedding_model.encode(expanded_q).tolist()
+        try:
+            query_embedding = _get_gemini_embedding(expanded_q)
+        except Exception as e:
+            print(f"[vector-search] Embedding API error: {e}")
+            return SearchResponse(results=[])
 
         sql = """
             WITH raw_matches AS (
@@ -276,11 +289,16 @@ def search_diagnoses(q: str, limit: int = 5):
         cur = conn.cursor()
         cur.execute(sql, (query_embedding, query_embedding, limit))
         rows = cur.fetchall()
-        out = [
-            SearchResult(code=r[0], title=r[1] or "Unbekannte Diagnose", score=float(r[2]) if r[2] else 0.0)
-            for r in rows
-            if (float(r[2]) if r[2] else 0.0) >= 0.75
-        ]
+        out = []
+        for r in rows:
+            raw_sim = float(r[2]) if r[2] else 0.0
+            # Scale vector score so 0.70 becomes 0% and 1.0 becomes 100%
+            scaled_score = max(0.0, (raw_sim - 0.70) / 0.30)
+            if scaled_score >= 0.15: # i.e. original similarity > 0.745
+                out.append(SearchResult(code=r[0], title=r[1] or "Unbekannte Diagnose", score=round(scaled_score, 3)))
+        
+        # Sort by scaled score
+        out.sort(key=lambda x: x.score, reverse=True)
         return SearchResponse(results=out[:limit])
 
     finally:
@@ -298,7 +316,11 @@ def _run_vector_search(q_text: str, limit: int, conn) -> list[SearchResult]:
     try:
         # Expand with local synonym dict first
         expanded = expand_query(q_text)
-        embedding = embedding_model.encode(expanded).tolist()
+        try:
+            embedding = _get_gemini_embedding(expanded)
+        except Exception as e:
+            print(f"[vector-search] Embedding API error: {e}")
+            return []
 
         sql = """
             WITH raw_matches AS (
@@ -328,15 +350,18 @@ def _run_vector_search(q_text: str, limit: int, conn) -> list[SearchResult]:
         """
         cur.execute(sql, (embedding, embedding, limit))
         rows = cur.fetchall()
-        return [
-            SearchResult(
-                code=row[0],
-                title=row[1] or "Unbekannte Diagnose",
-                score=float(row[2]) if row[2] is not None else 0.0
-            )
-            for row in rows
-            if (float(row[2]) if row[2] is not None else 0.0) >= 0.75
-        ]
+        out = []
+        for row in rows:
+            raw_sim = float(row[2]) if row[2] is not None else 0.0
+            scaled_score = max(0.0, (raw_sim - 0.75) / 0.25)
+            if scaled_score >= 0.20:
+                out.append(SearchResult(
+                    code=row[0],
+                    title=row[1] or "Unbekannte Diagnose",
+                    score=round(scaled_score, 3)
+                ))
+        out.sort(key=lambda x: x.score, reverse=True)
+        return out
     finally:
         cur.close()
 
@@ -378,37 +403,42 @@ def search_refined(q: str, limit: int = 5):
         expanded_query = q + " " + gemini_response.strip()
         print(f"[refined] Original: '{q}' → Gemini expanded: '{gemini_response.strip()}'")
 
-        # Step 2: Try Meilisearch with the extracted expert terms (Proposal C)
-        expert_terms = gemini_response.strip().replace(",", " ")
+        # Step 2: Try Meilisearch with the extracted expert terms individually
+        terms = [t.strip() for t in gemini_response.split(",") if t.strip()]
+        all_meili_hits = {}
+        
         if meili_index is not None:
-            try:
-                ms_res = meili_index.search(expert_terms, {
-                    "limit": limit * 3,
-                    "attributesToRetrieve": ["code", "title"],
-                    "showRankingScore": True
-                })
-                hits = ms_res.get("hits", [])
-                if hits:
-                    seen = {}
+            for term in terms:
+                try:
+                    ms_res = meili_index.search(term, {
+                        "limit": 3,
+                        "attributesToRetrieve": ["code", "title"],
+                        "showRankingScore": True
+                    })
+                    hits = ms_res.get("hits", [])
                     for hit in hits:
                         code3 = hit["code"][:3]
-                        if code3 not in seen:
-                            seen[code3] = SearchResult(
+                        score = round(hit.get("_rankingScore", 0.0), 3)
+                        # Keep the highest score for a code across all terms
+                        if code3 not in all_meili_hits or score > all_meili_hits[code3].score:
+                            all_meili_hits[code3] = SearchResult(
                                 code=code3,
                                 title=hit.get("title") or "Unbekannte Diagnose",
-                                score=round(hit.get("_rankingScore", 0.5), 3)
+                                score=score
                             )
-                        if len(seen) >= limit:
-                            break
-                    
-                    # If Meilisearch found highly relevant hits using medical terms, return them
-                    best_match = list(seen.values())[0] if seen else None
-                    if best_match and best_match.score >= 0.75:
-                        print(f"[refined-meili] Strong match found for expert terms: {best_match.code} ({best_match.score})")
-                        filtered_results = [r for r in seen.values() if r.score >= 0.75]
-                        return SearchResponse(results=filtered_results)
-            except Exception as e:
-                print(f"[refined-meili] Error: {e}")
+                except Exception as e:
+                    print(f"[refined-meili] Error searching term '{term}': {e}")
+            
+            if all_meili_hits:
+                # Sort all hits by score
+                sorted_hits = sorted(all_meili_hits.values(), key=lambda x: x.score, reverse=True)
+                best_match = sorted_hits[0]
+                
+                # If we found a very confident exact match for any of the Gemini terms
+                if best_match.score >= 0.75:
+                    print(f"[refined-meili] Strong match found for expert terms: {best_match.code} ({best_match.score})")
+                    filtered_results = [r for r in sorted_hits if r.score >= 0.70]
+                    return SearchResponse(results=filtered_results[:limit])
 
         # Step 3: If Meilisearch didn't find a strong match, run the heavy vector search
         results = _run_vector_search(expanded_query, limit, conn)
@@ -486,3 +516,103 @@ def chat_contextual(req: ContextualChatRequest):
     prompt = f"Im Kontext der Diagnose '{req.condition_code}: {req.condition_title}', beantworte folgende Frage des Patienten kurz, hilfreich und laienverständlich:\nFrage des Patienten: {req.question}"
     ans = ask_gemini(prompt)
     return ChatResponse(answer=ans)
+
+# --- SEO & Cache Overview ---
+
+@app.get("/api/cached-conditions")
+def get_cached_conditions():
+    """
+    Returns all unique ICD codes that have been cached (seeded) along with their titles.
+    Used for generating the landing page overview and sitemap.
+    """
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT c.code, c.title
+            FROM icd_class c
+            JOIN icd_ai_cache a ON c.code = a.icd_code
+            ORDER BY c.title ASC
+        """)
+        rows = cur.fetchall()
+        
+        results = [{"code": row[0], "title": row[1] or "Unbekannte Diagnose"} for row in rows]
+        return {"conditions": results}
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
+@app.get("/sitemap.xml")
+def get_sitemap():
+    """
+    Generates a dynamic sitemap.xml for all cached diseases
+    to improve Google / Search Engine indexing.
+    """
+    import datetime
+    from fastapi import Response
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT c.code, c.title
+            FROM icd_class c
+            JOIN icd_ai_cache a ON c.code = a.icd_code
+            ORDER BY c.code ASC
+        """)
+        rows = cur.fetchall()
+        
+        # Simple slugify logic mirroring the frontend
+        def slugify(text):
+            if not text:
+                return "diagnose"
+            text = text.lower()
+            text = re.sub(r'[^a-z0-9öäüß]+', '-', text) # basic german support
+            text = text.replace('ö', 'oe').replace('ä', 'ae').replace('ü', 'ue').replace('ß', 'ss')
+            text = re.sub(r'[^a-z0-9]+', '-', text)
+            text = re.sub(r'(^-|-$)+', '', text)
+            return text
+
+        base_url = "https://medcode.ch"
+        date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        xml_urls = []
+        xml_urls.append(f'''
+    <url>
+        <loc>{base_url}/</loc>
+        <lastmod>{date_str}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>''')
+        
+        # Add all cached pages
+        for row in rows:
+            code = row[0]
+            title = row[1] or ""
+            slug = slugify(title)
+            url = f"{base_url}/{slug}/{code}"
+            
+            xml_urls.append(f'''
+    <url>
+        <loc>{url}</loc>
+        <lastmod>{date_str}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>''')
+            
+        xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{''.join(xml_urls)}
+</urlset>'''
+
+        return Response(content=xml_content, media_type="application/xml")
+        
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
