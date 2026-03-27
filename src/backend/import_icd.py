@@ -1,8 +1,8 @@
 import os
+import time
 import psycopg2
 from lxml import etree
-from sentence_transformers import SentenceTransformer
-import numpy as np
+from google import genai
 from tqdm import tqdm
 from dotenv import load_dotenv
 
@@ -12,20 +12,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_NAME = os.getenv("DB_NAME", "medcode")
+DB_USER = os.getenv("DB_USER", "medcode")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "changeme")
 
-#for production use: "sentence-transformers/paraphrase-multilingual-mpnet-base-v2" adjust dimenstion to 768
-model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY is not set!")
+genai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 DATA_DIR = os.getenv("DATA_DIR", ".")
 XML_FILE = os.path.join(DATA_DIR, "icd10gm2026syst_claml_20250912.xml")
 TXT_FILE = os.path.join(DATA_DIR, "icd10gm2026alpha_edvtxt_20250926.txt")
 
-EMBEDDING_MODEL = "text-embedding-3-small"
-EMBEDDING_DIM = 384
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBEDDING_DIM = 3072
 
 
 # --------------------------------------------------
@@ -87,13 +89,10 @@ def create_tables():
     );
     """)
 
-    cur.execute("""
-    CREATE INDEX IF NOT EXISTS idx_embedding
-    ON icd_embedding
-    USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
-    """)
-
+    # Note: We omit CREATE INDEX here because ivfflat only supports up to 2000
+    # dimensions in pgvector. Exact search (sequential scan) is fast enough 
+    # for 15,000 ICD codes and 3072 dimensions.
+    
     print("Tables created.")
 
 
@@ -101,9 +100,30 @@ def create_tables():
 # Embedding Function
 # --------------------------------------------------
 
-def generate_embedding(text: str):
-    embedding = model.encode(text)
-    return embedding.tolist()
+def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
+    if not texts:
+        return []
+    
+    # Gemini allows max 100 items per request, but let's batch manually here
+    # to handle retries smoothly.
+    results = []
+    chunk_size = 100
+    for i in range(0, len(texts), chunk_size):
+        chunk = texts[i:i + chunk_size]
+        while True:
+            try:
+                resp = genai_client.models.embed_content(
+                    model=EMBEDDING_MODEL,
+                    contents=chunk,
+                    config={"task_type": "RETRIEVAL_DOCUMENT"}
+                )
+                chunk_results = [emb.values for emb in resp.embeddings]
+                results.extend(chunk_results)
+                break
+            except Exception as e:
+                print(f"Embedding API error: {e}. Retrying in 5s...")
+                time.sleep(5)
+    return results
 
 
 # --------------------------------------------------
@@ -156,6 +176,7 @@ def import_xml():
         infectious = meta.get("Infectious") == "J"
         content = meta.get("Content") == "J"
 
+        # We collect items instead of immediately embedding
         cur.execute("""
             INSERT INTO icd_class (
                 code, kind, title, definition,
@@ -163,23 +184,34 @@ def import_xml():
                 age_low, age_high, infectious, content
             )
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            ON CONFLICT (code) DO NOTHING;
+            ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, definition = EXCLUDED.definition;
         """, (
             code, kind, title, definition,
             para295, para301, sex_code,
             age_low, age_high, infectious, content
         ))
-
-        # Generate embedding for title
-        if title:
-            embedding = generate_embedding(f"{code} {title}")
-
+        
+    print("Classes inserted. Now batch-generating embeddings for titles...")
+    
+    # Fetch all inserted items that need title embeddings
+    cur.execute("SELECT code, title FROM icd_class WHERE title IS NOT NULL")
+    all_classes = cur.fetchall()
+    
+    batch_size = 500
+    for i in tqdm(range(0, len(all_classes), batch_size), desc="Embedding XML Titles"):
+        batch = all_classes[i:i+batch_size]
+        codes = [row[0] for row in batch]
+        texts = [f"{row[0]} {row[1]}" for row in batch]
+        
+        embeddings = generate_embeddings_batch(texts)
+        
+        for code, emb in zip(codes, embeddings):
             cur.execute("""
                 INSERT INTO icd_embedding (
                     icd_code, source_type, embedding
                 )
                 VALUES (%s,%s,%s);
-            """, (code, "title", embedding))
+            """, (code, "title", emb))
 
     print("XML import complete.")
 
@@ -196,7 +228,8 @@ def import_txt():
     print("Parsing Alphabetical TXT...")
 
     with open(TXT_FILE, encoding="utf-8") as f:
-        for line in tqdm(f):
+        synonym_batch = []
+        for line in tqdm(f, desc="Parsing Synonyms TXT"):
             parts = line.strip().split("|")
 
             if len(parts) != 8:
@@ -214,23 +247,38 @@ def import_txt():
 
             if code not in valid_codes:
                 continue
-
+                
+            synonym_batch.append((code, term, coding_type))
+            
+    print(f"Extracted {len(synonym_batch)} synonyms. Starting batch insertion and embedding...")
+    
+    batch_size = 500
+    for i in tqdm(range(0, len(synonym_batch), batch_size), desc="Embedding Synonyms"):
+        batch = synonym_batch[i:i+batch_size]
+        
+        # 1. Insert the synonyms into Postgres to get IDs
+        inserted_items = []
+        for (code, term, coding_type) in batch:
             cur.execute("""
                 INSERT INTO icd_synonym (icd_code, term, coding_type)
                 VALUES (%s,%s,%s)
                 RETURNING id;
             """, (code, term, coding_type))
-
             synonym_id = cur.fetchone()[0]
-
-            embedding = generate_embedding(term)
-
+            inserted_items.append((code, synonym_id, term))
+            
+        # 2. Batch generate embeddings
+        texts = [item[2] for item in inserted_items]
+        embeddings = generate_embeddings_batch(texts)
+        
+        # 3. Insert embeddings
+        for (code, synonym_id, _), emb in zip(inserted_items, embeddings):
             cur.execute("""
                 INSERT INTO icd_embedding (
                     icd_code, source_type, source_id, embedding
                 )
                 VALUES (%s,%s,%s,%s);
-            """, (code, "synonym", synonym_id, embedding))
+            """, (code, "synonym", synonym_id, emb))
 
     print("TXT import complete.")
 

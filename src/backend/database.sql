@@ -34,7 +34,7 @@ CREATE TABLE icd_embedding (
     icd_code VARCHAR(10) REFERENCES icd_class(code),
     source_type VARCHAR(20),  -- 'title', 'synonym', 'definition'
     source_id INT,            -- reference id
-    embedding vector(384)     -- depends on model, CHECK VECTOR SIZE!
+    embedding vector(3072)    -- 3072 for gemini-embedding-001
 );
 
 -- Cache for AI explanations
