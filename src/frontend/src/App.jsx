@@ -6,10 +6,21 @@ const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 const LoadingDots = () => <span className="typing-dots" style={{letterSpacing: '1px'}}><span>.</span><span>.</span><span>.</span></span>;
 
+const slugify = (text) => {
+  if (!text) return "diagnose";
+  return text.toLowerCase()
+    .replace(/ö/g, 'oe').replace(/ä/g, 'ae').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+};
+
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('hero'); // 'hero' or 'results'
   const [currentCondition, setCurrentCondition] = useState(null);
+  
+  // Index state
+  const [activeLetter, setActiveLetter] = useState('A');
   
   // Results state
   const [otherMatches, setOtherMatches] = useState([]);
@@ -35,6 +46,67 @@ function App() {
   const [subcodes, setSubcodes] = useState([]);
   const [subcodesLoading, setSubcodesLoading] = useState(false);
   const [subcodesOpen, setSubcodesOpen] = useState(false);
+
+  // Cached Conditions state
+  const [cachedConditions, setCachedConditions] = useState([]);
+  const handleSearchRef = useRef(null);
+
+  // Dynamic SEO meta tags
+  useEffect(() => {
+    if (currentCondition) {
+      document.title = `${currentCondition.title} (${currentCondition.code}) — medcode.ch`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', `Verständliche medizinische Erklärung, Behandlung und Informationen zur Diagnose ${currentCondition.title} (ICD-10 Code ${currentCondition.code}).`);
+    } else {
+      document.title = 'medcode.ch — Diagnosensuche';
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', 'ICD-10 Diagnosensuche. Verstehen Sie Ihre Diagnose verständlich erklärt.');
+    }
+  }, [currentCondition]);
+
+  const updateHistory = (code, title, skipHistory) => {
+    if (!skipHistory) {
+      window.history.pushState({}, '', `/${slugify(title)}/${code}`);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch cached conditions
+    fetch(`${API}/cached-conditions`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.conditions) setCachedConditions(data.conditions);
+      })
+      .catch(e => console.error("Error fetching cached conditions:", e));
+
+    // Handle initial routing based on URL
+    const path = window.location.pathname;
+    if (path !== '/') {
+      const match = path.match(/^\/[^/]+\/([A-Z0-9.-]+)$/i);
+      if (match && match[1]) {
+        // use setTimeout to ensure handleSearchRef has been assigned
+        setTimeout(() => {
+          if (handleSearchRef.current) handleSearchRef.current(match[1].toUpperCase(), true);
+        }, 50);
+      }
+    }
+
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/') {
+        setView('hero');
+        setSearchTerm('');
+        setCurrentCondition(null);
+      } else {
+        const m = currentPath.match(/^\/[^/]+\/([A-Z0-9.-]+)$/i);
+        if (m && m[1]) {
+          if (handleSearchRef.current) handleSearchRef.current(m[1].toUpperCase(), true);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     let timer;
@@ -80,7 +152,7 @@ function App() {
     return { __html: formatted };
   };
 
-  const handleSearch = async (term) => {
+  const handleSearch = async (term, skipHistory = false) => {
     const q = (term || '').trim();
     if (!q) return;
 
@@ -126,6 +198,7 @@ function App() {
         setCurrentCondition({ code: top.code, title: top.title, version: top.version, score: top.score });
         if (results.length > 1) setOtherMatches(results.slice(1));
         setSearchLoading(false);
+        updateHistory(top.code, top.title, skipHistory);
 
         const question = `${top.code}: ${top.title}`;
         fetchBlock('/chat/explain', question, setExplain);
@@ -144,6 +217,7 @@ function App() {
             if (refined.length > 1) setOtherMatches(refined.slice(1));
             setSearchRefined(true);
             setSearchLoading(false);
+            updateHistory(refinedTop.code, refinedTop.title, skipHistory);
 
             const refinedQuestion = `${refinedTop.code}: ${refinedTop.title}`;
             fetchBlock('/chat/explain', refinedQuestion, setExplain);
@@ -159,6 +233,7 @@ function App() {
         setCurrentCondition({ code: top.code, title: top.title, version: top.version, score: top.score });
         if (results.length > 1) setOtherMatches(results.slice(1));
         setSearchLoading(false);
+        updateHistory(top.code, top.title, skipHistory);
 
         const question = `${top.code}: ${top.title}`;
         fetchBlock('/chat/explain', question, setExplain);
@@ -194,7 +269,10 @@ function App() {
     }
   };
 
-  const handleSelectCondition = (code, title, score) => {
+  const handleSelectCondition = (code, title, score, skipHistory = false) => {
+    // Switch to results view if we are on hero
+    if (view === 'hero') setView('results');
+
     // Swap: put the current main result back into the chips list
     setOtherMatches(prev => {
       const prevMain = currentCondition;
@@ -207,6 +285,7 @@ function App() {
     });
 
     setCurrentCondition({ code, title, version: '2024', score });
+    updateHistory(code, title, skipHistory);
     
     // Reset contents
     setExplain({ loading: true, data: null, error: null });
@@ -251,7 +330,8 @@ function App() {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = (e_or_skipHistory) => {
+    const skipHistory = e_or_skipHistory === true;
     setView('hero');
     setSearchTerm('');
     setCurrentCondition(null);
@@ -266,7 +346,12 @@ function App() {
     setIsChatOpen(false);
     setSubcodes([]);
     setSubcodesOpen(false);
+    if (!skipHistory) {
+      window.history.pushState({}, '', '/');
+    }
   };
+
+  handleSearchRef.current = handleSearch;
 
   return (
     <div className="layout">
@@ -296,6 +381,46 @@ function App() {
                 </svg>
               </button>
             </div>
+            
+            {cachedConditions.length > 0 && (
+              <div className="cached-conditions-container">
+                <div className="cached-title">Krankheits-Index (A-Z)</div>
+                
+                <div className="alphabet-nav">
+                  {Array.from(new Set(cachedConditions.map(c => c.title.charAt(0).toUpperCase()))).sort().map(letter => (
+                    <button 
+                      key={letter}
+                      className={`alphabet-btn ${activeLetter === letter ? 'active' : ''}`}
+                      onClick={() => setActiveLetter(letter)}
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="cached-list">
+                  {cachedConditions
+                    .filter(c => c.title.charAt(0).toUpperCase() === activeLetter)
+                    .map(c => (
+                      <a 
+                        key={c.code} 
+                        href={`/${slugify(c.title)}/${c.code}`} 
+                        className="cached-pill"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleSelectCondition(c.code, c.title, 1.0);
+                        }}
+                      >
+                        {c.title}
+                      </a>
+                  ))}
+                  {cachedConditions.filter(c => c.title.charAt(0).toUpperCase() === activeLetter).length === 0 && (
+                    <div style={{fontSize: '13px', color: 'var(--muted)', padding: '10px 0'}}>Keine Einträge für diesen Buchstaben.</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
           </div>
         ) : (
           <div className="results-view visible">

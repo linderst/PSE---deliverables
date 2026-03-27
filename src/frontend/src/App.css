@@ -145,6 +145,83 @@ html, body {
   animation: slide-up-fade 0.5s ease-out 0.15s forwards;
   opacity: 0;
 }
+
+/* Cached Conditions Menu (A-Z Index) */
+.cached-conditions-container {
+  margin-top: 30px;
+  text-align: left;
+  width: 100%;
+  max-width: 600px;
+  animation: slide-up-fade 0.5s ease-out 0.2s forwards;
+  opacity: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.cached-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.alphabet-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.alphabet-btn {
+  background: var(--bg);
+  border: 1px solid transparent;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-family: var(--font);
+}
+.alphabet-btn:hover {
+  background: #e2e8f0;
+  color: var(--text);
+}
+.alphabet-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+}
+.cached-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cached-pill {
+  display: inline-flex;
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid transparent;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.cached-pill:hover {
+  background: var(--accent-light);
+  color: var(--accent-hover);
+}
+
 .search-wrap.no-animate {
   animation: none;
   opacity: 1;
