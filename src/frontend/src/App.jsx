@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
+import { slugify } from './utils/helpers';
+
+// Components
+import HeroView from './components/hero/HeroView';
+import TopBar from './components/results/TopBar';
+import MatchCard from './components/results/MatchCard';
+import OtherMatches from './components/results/OtherMatches';
+import InfoBlocks from './components/results/InfoBlocks';
+import SubcodesPanel from './components/results/SubcodesPanel';
+import DialogPanel from './components/results/DialogPanel';
 
 // Using Vite's environment variables or defaulting to localhost:8000
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-
-const LoadingDots = () => <span className="typing-dots" style={{letterSpacing: '1px'}}><span>.</span><span>.</span><span>.</span></span>;
-
-const slugify = (text) => {
-  if (!text) return "diagnose";
-  return text.toLowerCase()
-    .replace(/ö/g, 'oe').replace(/ä/g, 'ae').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
-};
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -142,16 +142,6 @@ function App() {
       .catch(() => setSubcodesLoading(false));
   }, [currentCondition?.code]);
 
-  const formatText = (text) => {
-    if (!text) return { __html: '' };
-    // Very basic formatting: newlines to <br>, **text** to <strong>text</strong>
-    const formatted = text
-      .split(/\n\n+/)
-      .map(p => `<p>${p.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</p>`)
-      .join('');
-    return { __html: formatted };
-  };
-
   const handleSearch = async (term, skipHistory = false) => {
     const q = (term || '').trim();
     if (!q) return;
@@ -240,7 +230,6 @@ function App() {
         fetchBlock('/chat/specialist', question, setSpecialist);
         fetchBlock('/chat/guidance', question, setGuidance);
       }
-
 
     } catch (e) {
       setSearchError('Fehler bei der Suche. Bitte erneut versuchen.');
@@ -355,364 +344,69 @@ function App() {
 
   return (
     <div className="layout">
-      {/* Main */}
       <main className="main">
         {view === 'hero' ? (
-          <div className="hero">
-            <div className="hero-badge">ICD-10 Diagnosensuche</div>
-            <div>
-              <div className="hero-title">Was steht in Ihrem Arztbrief?</div>
-              <div className="hero-sub" style={{ marginTop: '12px' }}>
-                Geben Sie einen medizinischen Begriff, eine Diagnose oder einen ICD-10-Code ein — wir erklären ihn verständlich.
-              </div>
-            </div>
-            <div className="search-wrap">
-              <input 
-                type="text" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Medizinischen Begriff oder Code eingeben..." 
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
-                autoFocus
-              />
-              <button className="search-btn" onClick={() => handleSearch(searchTerm)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-              </button>
-            </div>
-            
-            {cachedConditions.length > 0 && (
-              <div className="cached-conditions-container">
-                <div className="cached-title">Krankheits-Index (A-Z)</div>
-                
-                <div className="alphabet-nav">
-                  {Array.from(new Set(cachedConditions.map(c => c.title.charAt(0).toUpperCase()))).sort().map(letter => (
-                    <button 
-                      key={letter}
-                      className={`alphabet-btn ${activeLetter === letter ? 'active' : ''}`}
-                      onClick={() => setActiveLetter(letter)}
-                    >
-                      {letter}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="cached-list">
-                  {cachedConditions
-                    .filter(c => c.title.charAt(0).toUpperCase() === activeLetter)
-                    .map(c => (
-                      <a 
-                        key={c.code} 
-                        href={`/${slugify(c.title)}/${c.code}`} 
-                        className="cached-pill"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleSelectCondition(c.code, c.title, 1.0);
-                        }}
-                      >
-                        {c.title}
-                      </a>
-                  ))}
-                  {cachedConditions.filter(c => c.title.charAt(0).toUpperCase() === activeLetter).length === 0 && (
-                    <div style={{fontSize: '13px', color: 'var(--muted)', padding: '10px 0'}}>Keine Einträge für diesen Buchstaben.</div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-          </div>
+          <HeroView
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            handleSearch={handleSearch}
+            cachedConditions={cachedConditions}
+            activeLetter={activeLetter}
+            setActiveLetter={setActiveLetter}
+            handleSelectCondition={handleSelectCondition}
+          />
         ) : (
           <div className="results-view visible">
             <div className="results-content">
-              {/* Top bar with inline search */}
-              <div className="results-topbar">
-                <div 
-                  className="brand-logo" 
-                  onClick={handleReset} 
-                  style={{ cursor: 'pointer', marginRight: '20px', display: 'flex', flexDirection: 'column' }}
-                  title="Zurück zum Start"
-                >
-                  <h1 style={{ fontSize: '22px', margin: 0, fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--accent)', lineHeight: 1 }}>medcode.ch</h1>
-                  <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.3px', marginTop: '2px' }}>DIAGNOSEN</span>
-                </div>
-                <div className="search-wrap no-animate">
-                  <input 
-                    type="text" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Neue Suche..." 
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
-                  />
-                  <button className="search-btn" onClick={() => handleSearch(searchTerm)}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              <TopBar
+                handleReset={handleReset}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                handleSearch={handleSearch}
+              />
 
-              {/* Primary match */}
-              <div className="match-card">
-                <div className="match-content">
-                  <div className="match-code">{searchLoading ? <LoadingDots /> : (currentCondition ? currentCondition.code : '?')}</div>
-                  <div className="match-info">
-                    <div className="match-title" style={{ display: 'flex', alignItems: 'center' }}>
-                      {searchLoading ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div className="spinner" style={{width: '20px', height: '20px', borderWidth: '3px'}}></div>
-                          <span>KI-Diagnose läuft<LoadingDots /></span>
-                        </div>
-                      ) : (currentCondition ? currentCondition.title : searchError)}
-                    </div>
-                    {searchLoading && longLoading && (
-                      <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '8px', animation: 'slide-up-fade 0.5s ease-out forwards', pointerEvents: 'none' }}>
-                        Detaillierte Analyse deines komplexeren Symptoms...
-                      </div>
-                    )}
-                    <div className="match-meta">
-                      {currentCondition && `ICD-10-GM ${currentCondition.version}`}
-                    </div>
-                    {searchRefined && (
-                      <div className="refined-badge">✦ KI-verfeinert</div>
-                    )}
-                  </div>
-                </div>
-                {/* Tachometer */}
-                {currentCondition && !searchLoading && currentCondition.score != null && (
-                  <div className="tachometer">
-                    <svg viewBox="0 0 36 36" className="circular-chart">
-                      <path className="circle-bg"
-                        d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <path className="circle"
-                        strokeDasharray={`${Math.round(currentCondition.score * 100)}, 100`}
-                        d="M18 2.0845
-                          a 15.9155 15.9155 0 0 1 0 31.831
-                          a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <text x="18" y="20.35" className="percentage">{Math.round(currentCondition.score * 100)}%</text>
-                    </svg>
-                    <div className="tacho-label">Treffer</div>
-                  </div>
-                )}
-              </div>
+              <MatchCard
+                searchLoading={searchLoading}
+                currentCondition={currentCondition}
+                searchError={searchError}
+                longLoading={longLoading}
+                searchRefined={searchRefined}
+              />
 
-              {/* Other matches */}
-              {otherMatches.length > 0 && (
-                <div className="other-matches" style={{ display: 'flex' }}>
-                  <span style={{ color: 'var(--muted)', fontSize: '12px' }}>Weitere Treffer:</span>
-                  {otherMatches.map((m, i) => (
-                     <div 
-                       key={i} 
-                       className={`other-match-chip tooltip-wrap${(m.score || 0) >= 0.95 ? ' other-match-chip--high' : ''}`}
-                       onClick={() => handleSelectCondition(m.code, m.title, m.score)}
-                     >
-                       {m.code}
-                       {(m.score || 0) >= 0.95 && <span className="chip-star">✓</span>}
-                       <div className="tooltip-bubble">
-                          <div className="tooltip-title">{m.title}</div>
-                          <div className="tooltip-score">Sicherheit: {Math.round(m.score * 100)}%</div>
-                       </div>
-                     </div>
-                  ))}
-                </div>
-              )}
+              <OtherMatches
+                otherMatches={otherMatches}
+                handleSelectCondition={handleSelectCondition}
+              />
 
-              {/* Three content blocks */}
-              <div className="blocks-grid">
-                {/* Explain */}
-                <div className="block">
-                  <div className="block-header">
-                    <div className="block-icon blue">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
-                      </svg>
-                    </div>
-                    <span className="block-label">Was ist das?</span>
-                  </div>
-                  <div>
-                    {explain.loading && <div className="block-loading"><div className="spinner"></div>Wird geladen…</div>}
-                    {explain.error && <div className="block-body"><p style={{ color: 'var(--muted)' }}>{explain.error}</p></div>}
-                    {explain.data && <div className="block-body" dangerouslySetInnerHTML={formatText(explain.data)} />}
-                  </div>
-                </div>
-
-                {/* Specialist */}
-                <div className="block">
-                  <div className="block-header">
-                    <div className="block-icon green">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                      </svg>
-                    </div>
-                    <span className="block-label">Wer behandelt das?</span>
-                  </div>
-                  <div>
-                    {specialist.loading && <div className="block-loading"><div className="spinner"></div>Wird geladen…</div>}
-                    {specialist.error && <div className="block-body"><p style={{ color: 'var(--muted)' }}>{specialist.error}</p></div>}
-                    {specialist.data && <div className="block-body" dangerouslySetInnerHTML={formatText(specialist.data)} />}
-                  </div>
-                </div>
-
-                {/* Guidance */}
-                <div className="block">
-                  <div className="block-header">
-                    <div className="block-icon amber">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                      </svg>
-                    </div>
-                    <span className="block-label">Wie wird behandelt?</span>
-                  </div>
-                  <div>
-                    {guidance.loading && <div className="block-loading"><div className="spinner"></div>Wird geladen…</div>}
-                    {guidance.error && <div className="block-body"><p style={{ color: 'var(--muted)' }}>{guidance.error}</p></div>}
-                    {guidance.data && <div className="block-body" dangerouslySetInnerHTML={formatText(guidance.data)} />}
-                  </div>
-                </div>
-              </div>
+              <InfoBlocks
+                explain={explain}
+                specialist={specialist}
+                guidance={guidance}
+              />
 
               {disclaimer && (
                 <div className="disclaimer" dangerouslySetInnerHTML={{ __html: disclaimer }} />
               )}
             </div>
 
-            {/* Subcodes Panel */}
-            {subcodes.length > 0 && (
-              <div className="subcodes-panel">
-                <div 
-                  className="subcodes-toggle" 
-                  onClick={() => setSubcodesOpen(!subcodesOpen)}
-                >
-                  <div className="subcodes-toggle-left">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                    <span>Spezifische Diagnosen ({subcodes.length} Unterkategorien)</span>
-                  </div>
-                  <button className="toggle-btn">
-                    {subcodesOpen ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    )}
-                  </button>
-                </div>
-                
-                {subcodesOpen && (
-                  <div className="subcodes-list">
-                    <div style={{ padding: '8px 20px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: '600', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
-                      <span>Unterkategorien</span>
-                      <span>Klinische Relevanz</span>
-                    </div>
-                    {(() => {
-                      const maxSynonyms = Math.max(...subcodes.map(s => s.synonym_count), 1);
-                      return subcodes.map((sub) => {
-                        const barWidth = Math.max(5, (sub.synonym_count / maxSynonyms) * 100);
-                        return (
-                          <div 
-                            key={sub.code} 
-                            className="subcode-item"
-                            onClick={() => handleSelectCondition(sub.code, sub.title, 0.99)}
-                          >
-                            <div className="subcode-item-left">
-                              <span className="subcode-code">{sub.code}</span>
-                              <span className="subcode-title">{sub.title}</span>
-                            </div>
-                            <div className="subcode-item-right" title={`Relevanz-Score: ${sub.synonym_count}`}>
-                              <div className="subcode-bar-bg">
-                                <div className="subcode-bar-fill" style={{ width: `${barWidth}%` }}></div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
+            <SubcodesPanel
+              subcodes={subcodes}
+              subcodesOpen={subcodesOpen}
+              setSubcodesOpen={setSubcodesOpen}
+              handleSelectCondition={handleSelectCondition}
+            />
 
-            {/* Dialog Panel */}
-            <div className="dialog-panel">
-              {dialogMessages.length > 0 ? (
-                /* Once conversation started: show toggle header; input + history are toggled together */
-                <>
-                  <div 
-                    className="dialog-toggle" 
-                    onClick={() => setIsChatOpen(!isChatOpen)}
-                  >
-                    <span>Gesprächsverlauf ({dialogMessages.length} Nachrichten)</span>
-                    <button className="toggle-btn">
-                      {isChatOpen ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      )}
-                    </button>
-                  </div>
-
-                  {isChatOpen && (
-                    <div className="dialog-section">
-                      <div className="dialog-messages">
-                        {dialogMessages.map((msg, idx) => (
-                          <div key={idx} className={`msg ${msg.role === 'user' ? 'user' : 'assistant'}`}>
-                            <div className="msg-bubble" dangerouslySetInnerHTML={formatText(msg.text)} 
-                                 style={msg.isError ? { color: 'var(--muted)' } : {}}/>
-                          </div>
-                        ))}
-                        {dialogLoading && (
-                          <div className="msg assistant">
-                            <div className="msg-spinner"><div className="spinner"></div>Antwort wird generiert…</div>
-                          </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                      </div>
-                      <div className="dialog-input-row">
-                        <input 
-                          type="text" 
-                          value={dialogInput}
-                          onChange={(e) => setDialogInput(e.target.value)}
-                          placeholder="Stellen Sie eine Folgefrage zu dieser Diagnose..." 
-                          onKeyDown={(e) => e.key === 'Enter' && handleSendDialog()}
-                          disabled={!currentCondition || dialogLoading}
-                        />
-                        <button 
-                          className="dialog-send" 
-                          onClick={handleSendDialog}
-                          disabled={!currentCondition || dialogLoading || !dialogInput.trim()}
-                        >
-                          Senden
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                /* No messages yet: only show the input bar */
-                <div className="dialog-input-row">
-                  <input 
-                    type="text" 
-                    value={dialogInput}
-                    onChange={(e) => setDialogInput(e.target.value)}
-                    placeholder="Stellen Sie eine Folgefrage zu dieser Diagnose..." 
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendDialog()}
-                    disabled={!currentCondition || dialogLoading}
-                  />
-                  <button 
-                    className="dialog-send" 
-                    onClick={handleSendDialog}
-                    disabled={!currentCondition || dialogLoading || !dialogInput.trim()}
-                  >
-                    Senden
-                  </button>
-                </div>
-              )}
-            </div>
+            <DialogPanel
+              dialogMessages={dialogMessages}
+              isChatOpen={isChatOpen}
+              setIsChatOpen={setIsChatOpen}
+              dialogLoading={dialogLoading}
+              messagesEndRef={messagesEndRef}
+              dialogInput={dialogInput}
+              setDialogInput={setDialogInput}
+              handleSendDialog={handleSendDialog}
+              currentCondition={currentCondition}
+            />
           </div>
         )}
       </main>
