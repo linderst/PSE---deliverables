@@ -1,3 +1,16 @@
+/**
+ * @module TopBar
+ * @description Header bar shown in the results view. Contains the medcode.ch
+ * brand logo (clickable to reset to hero view) and a compact search input
+ * for starting a new search without leaving the results page.
+ *
+ * @component
+ * @param {Object} props
+ * @param {Function} props.handleReset   - Navigates back to the hero landing page
+ * @param {string}   props.searchTerm    - Current search input value
+ * @param {Function} props.setSearchTerm - Setter for the search input
+ * @param {Function} props.handleSearch  - Triggers a new diagnosis search
+ */
 import React from 'react';
 
 const TopBar = ({ handleReset, searchTerm, setSearchTerm, handleSearch }) => {

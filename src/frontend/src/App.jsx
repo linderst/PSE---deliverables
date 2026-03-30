@@ -1,8 +1,26 @@
+/**
+ * @module App
+ * @description Root component and central state container for the Medcode SPA.
+ *
+ * Manages all application state via React useState hooks and coordinates API
+ * communication with the FastAPI backend. Implements a binary view model
+ * ('hero' landing page vs 'results' detail view) with client-side routing
+ * via the History API (pushState / popstate).
+ *
+ * Architecture decisions:
+ * - Centralised state in this single root component (no Context API or
+ *   external state library) — keeps the dependency graph flat and explicit.
+ * - Prop drilling to child components — acceptable given the shallow
+ *   component tree (max depth 2).
+ * - Two-phase search strategy: fast Meilisearch/pgvector first, then
+ *   optional Gemini AI refinement when confidence < 0.75.
+ * - Three parallel fetchBlock() calls for the AI info blocks, so each
+ *   block renders independently as soon as its response arrives.
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import { slugify } from './utils/helpers';
 
-// Components
 import HeroView from './components/hero/HeroView';
 import TopBar from './components/results/TopBar';
 import MatchCard from './components/results/MatchCard';
@@ -11,7 +29,7 @@ import InfoBlocks from './components/results/InfoBlocks';
 import SubcodesPanel from './components/results/SubcodesPanel';
 import DialogPanel from './components/results/DialogPanel';
 
-// Using Vite's environment variables or defaulting to localhost:8000
+/** @constant {string} API - Base URL for all backend API requests (Vite env or localhost fallback). */
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 function App() {
@@ -64,6 +82,12 @@ function App() {
     }
   }, [currentCondition]);
 
+  /**
+   * Pushes an SEO-friendly URL to the browser history.
+   * @param {string} code  - ICD-10 code (e.g. "J18")
+   * @param {string} title - Diagnosis title in German
+   * @param {boolean} skipHistory - If true, skip the pushState (used during popstate handling)
+   */
   const updateHistory = (code, title, skipHistory) => {
     if (!skipHistory) {
       window.history.pushState({}, '', `/${slugify(title)}/${code}`);
@@ -142,6 +166,22 @@ function App() {
       .catch(() => setSubcodesLoading(false));
   }, [currentCondition?.code]);
 
+  /**
+   * Executes a diagnosis search against the backend API.
+   *
+   * Implements a two-phase search strategy:
+   * 1. Fast search via /api/search (Meilisearch + pgvector).
+   * 2. If the top result's confidence score < REFINE_THRESHOLD (0.75),
+   *    triggers /api/search/refined which uses Gemini to extract medical
+   *    terms and re-runs the search with boosted keywords.
+   *
+   * After a result is selected, three parallel fetchBlock() calls are fired
+   * for the explain/specialist/guidance AI info blocks.
+   *
+   * @async
+   * @param {string} term - Search query (ICD-10 code or free-text symptoms)
+   * @param {boolean} [skipHistory=false] - If true, does not push to browser history
+   */
   const handleSearch = async (term, skipHistory = false) => {
     const q = (term || '').trim();
     if (!q) return;
@@ -237,6 +277,15 @@ function App() {
     }
   };
 
+  /**
+   * Generic fetcher for a single AI info block (explain, specialist, or guidance).
+   * Acts as a Facade: the caller only supplies the endpoint suffix and a state setter.
+   *
+   * @async
+   * @param {string} endpoint - API path suffix (e.g. '/chat/explain')
+   * @param {string} question - The formatted question "{code}: {title}"
+   * @param {Function} setter  - React state setter for the block's {loading, data, error} object
+   */
   const fetchBlock = async (endpoint, question, setter) => {
     try {
       const res = await fetch(`${API}${endpoint}`, {
@@ -258,6 +307,16 @@ function App() {
     }
   };
 
+  /**
+   * Handles selection of a diagnosis from OtherMatches chips or AlphabetIndex.
+   * Swaps the current main result into the chips list and promotes the
+   * clicked item to the primary MatchCard. Resets and reloads all AI blocks.
+   *
+   * @param {string} code  - ICD-10 code of the selected diagnosis
+   * @param {string} title - Title of the selected diagnosis
+   * @param {number} score - Confidence score (0.0-1.0)
+   * @param {boolean} [skipHistory=false] - If true, skip browser history push
+   */
   const handleSelectCondition = (code, title, score, skipHistory = false) => {
     // Switch to results view if we are on hero
     if (view === 'hero') setView('results');
@@ -290,6 +349,14 @@ function App() {
     fetchBlock('/chat/guidance', question, setGuidance);
   };
 
+  /**
+   * Sends a follow-up question to the contextual chat endpoint.
+   * Appends the user message immediately and the AI response upon arrival.
+   * The chat keeps the current ICD-10 diagnosis as context so the LLM
+   * answers within the scope of the active condition.
+   *
+   * @async
+   */
   const handleSendDialog = async () => {
     const q = dialogInput.trim();
     if (!q || !currentCondition) return;
@@ -319,6 +386,13 @@ function App() {
     }
   };
 
+  /**
+   * Resets all application state and navigates back to the hero (landing) view.
+   * Used when the user clicks the medcode.ch logo or navigates to '/'.
+   *
+   * @param {Event|boolean} e_or_skipHistory - Either a click event or boolean
+   *   indicating whether to skip the history push (true when triggered by popstate)
+   */
   const handleReset = (e_or_skipHistory) => {
     const skipHistory = e_or_skipHistory === true;
     setView('hero');

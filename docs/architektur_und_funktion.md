@@ -1,4 +1,4 @@
-# Architektur & Funktionsweise: ICD-10 AI Prompt Engineer
+# Architektur & Funktionsweise: ICD-10 AI Prompt Engineer (Stand 30.03.2026)
 
 Dieses Dokument erklärt detailliert und technisch, wie die gesamte Applikation vom Starten bis zur endgültigen KI-Diagnose funktioniert.
 
@@ -16,7 +16,7 @@ Anstatt das Modell einfach blind raten zu lassen, funktioniert RAG wie eine Open
 
 ## 2. Die Infrastruktur: Docker Compose
 
-Damit all das ohne komplizierte Installationen auf jedem Computer läuft, ist das Projekt in 3 sogenannte **Docker Container** unterteilt, die komplett isoliert voneinander laufen, aber intern über ein virtuelles Netzwerk kommunizieren. Diese werden über die `docker-compose.yml` orchestriert.
+Damit all das ohne komplizierte Installationen auf jedem Computer läuft, ist das Projekt in **6 Docker Services** unterteilt (3 Hauptservices + Meilisearch + 2 Import-Services), die komplett isoliert voneinander laufen, aber intern über ein virtuelles Netzwerk kommunizieren. Diese werden über die `docker-compose.yml` orchestriert.
 
 ### A. Datenbank Container (`db`)
 - Läuft auf: **PostgreSQL 16** (dem Standard für relationale Datenbanken).
@@ -30,7 +30,7 @@ Damit all das ohne komplizierte Installationen auf jedem Computer läuft, ist da
 - Hier läuft sowohl die Logik für Vektorsuchen, als auch die Kommunikation mit Google Gemini ab.
 
 ### C. Frontend Container (`frontend`)
-- Die Benutzeroberfläche, geschrieben in **React** & **TypeScript**, gebaut mit dem Tooling **Vite**.
+- Die Benutzeroberfläche, geschrieben in **React** (JavaScript/JSX), gebaut mit dem Tooling **Vite**.
 - Läuft auf Port `5173`.
 - Nimmt nur deine Eingaben auf und stellt sie schön dar, die eigentliche Arbeit macht das Backend.
 
@@ -41,11 +41,11 @@ Damit all das ohne komplizierte Installationen auf jedem Computer läuft, ist da
 Bevor überhaupt Fragen gestellt werden können, muss die Datenbank mit medizinischem Wissen gefüllt werden (dies geschieht über den Importer-Container, den du beim ersten Mal ausgeführt hast).
 
 1. Der Code (`import_icd.py`) liest tausende von Einträgen aus offiziellen deutschen **ICD-10 XML-Dateien** (herausgegeben vom BfArM). ICD-10 ist das internationale Klassifikationssystem für Krankheiten.
-2. Das Skript lädt ein lokales KI-Modell (`paraphrase-multilingual-MiniLM-L12-v2`) von HuggingFace herunter. Dies ist ein sogenanntes **Embedding-Modell**.
-3. Jeder einzelne Krankheitsname aus dem XML wird durch dieses kompakte Modell geschoben. Das Modell wandelt den Text-Satz (z.B. *G43.0: Migräne ohne Aura*) in eine Liste hunderter Kommazahlen (den Vektor) um.
+2. Das Skript nutzt die **Google Gemini Embedding API** (`gemini-embedding-001`) um Text in hochdimensionale Vektoren (3072 Dimensionen) umzuwandeln. Dies ist ein sogenanntes **Embedding-Modell**.
+3. Jeder einzelne Krankheitsname aus dem XML wird durch die Gemini API geschickt. Das Modell wandelt den Text-Satz (z.B. *G43.0: Migräne ohne Aura*) in eine Liste von 3072 Kommazahlen (den Vektor) um.
 4. Diese Zahlen-Listen (Embeddings) werden zusammen mit den Klartexten in die PostgreSQL Datenbank (`db`) gespeichert.
 
-*Dieser Schritt dauert sehr lange, da hunderttausende solcher Vektoren lokal auf der CPU deines Laptops berechnet werden müssen.*
+*Dieser Schritt dauert ca. 30 Minuten, da tausende API-Aufrufe für die Embedding-Generierung gemacht werden müssen.*
 
 ---
 
@@ -54,12 +54,12 @@ Bevor überhaupt Fragen gestellt werden können, muss die Datenbank mit medizini
 Wenn du im Frontend auf "Generate Diagnosis" klickst, wird das Backend aufgerufen (die Schnittstelle `/api/diagnose` in `main.py`). Dann passiert Folgendes in Bruchteilen einer Sekunde:
 
 ### Phase A: Vektorisierung deiner Eingabe
-Das Backend nimmt genau deine Formulierung von der Tastatur entgegen und schickt sie ebenfalls durch das kleine, lokale Embedding-Modell (SentenceTransformer). Deine Eingabe (z.B. *"Mir pocht der Schädel und mir wird schlecht"*) wird in genau denselben 384-dimensionalen Vektor-Raum übersetzt wie die ICD-Katalog-Daten beim Import.
+Das Backend nimmt genau deine Formulierung von der Tastatur entgegen und schickt sie ebenfalls durch die Gemini Embedding API (`gemini-embedding-001`). Deine Eingabe (z.B. *"Mir pocht der Schädel und mir wird schlecht"*) wird in genau denselben 3072-dimensionalen Vektor-Raum uebersetzt wie die ICD-Katalog-Daten beim Import.
 
 ### Phase B: Die Vektorsuche (`K-Nearest Neighbors / Cosine Similarity`)
-Das Backend öffnet eine Verbindung zur PostgreSQL Datenbank und sagt: *"Hier ist ein Vektor. Vergleiche ihn mit allen 100.000 Vektoren im Katalog und gib mir die 5 Ergebnisse zurück, die mathematisch am dichtesten an diesem Punkt liegen".*
+Das Backend öffnet eine Verbindung zur PostgreSQL Datenbank und sagt: *"Hier ist ein Vektor. Vergleiche ihn mit allen Vektoren im Katalog und gib mir die 5 Ergebnisse zurück, die mathematisch am dichtesten an diesem Punkt liegen".*
 
-Die Datenbank berechnet die `Cosine Similarity` (die Winkel-Differenz zwischen den Linien der Vektoren im 384D Raum) und liefert blitzschnell die 5 Katalogeinträge zurück, die inhaltlich absolut am besten zu deiner Beschreibung passen.
+Die Datenbank berechnet die `Cosine Similarity` (die Winkel-Differenz zwischen den Linien der Vektoren im 3072D-Raum) und liefert blitzschnell die 5 Katalogeinträge zurück, die inhaltlich absolut am besten zu deiner Beschreibung passen.
 
 ### Phase C: Prompt Engineering (Der wichtigste Schritt)
 Jetzt wird der fertige Text (der "Prompt") für das eigentliche, riesige Google Gemini LLM zusammengebaut.

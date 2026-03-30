@@ -1,3 +1,23 @@
+/**
+ * @module DialogPanel
+ * @description Contextual follow-up chat interface. Before any message is
+ * sent, only the input bar is visible. After the first message, a
+ * collapsible conversation history with user/assistant bubbles is shown.
+ * Messages are formatted via formatText() and rendered with
+ * dangerouslySetInnerHTML (content originates from the trusted backend).
+ *
+ * @component
+ * @param {Object} props
+ * @param {Array}           props.dialogMessages    - Array of {role, text, isError?} message objects
+ * @param {boolean}         props.isChatOpen        - Whether the conversation history is expanded
+ * @param {Function}        props.setIsChatOpen     - Toggle setter for chat expansion
+ * @param {boolean}         props.dialogLoading     - True while waiting for an AI response
+ * @param {React.RefObject} props.messagesEndRef    - Ref for auto-scrolling to newest message
+ * @param {string}          props.dialogInput       - Current value of the chat input field
+ * @param {Function}        props.setDialogInput    - Setter for the chat input value
+ * @param {Function}        props.handleSendDialog  - Sends the current input as a follow-up question
+ * @param {Object|null}     props.currentCondition  - Active diagnosis context (disables input when null)
+ */
 import React from 'react';
 import { formatText } from '../../utils/helpers';
 

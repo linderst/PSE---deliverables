@@ -1,3 +1,20 @@
+/**
+ * @module InfoBlocks
+ * @description Three-column grid of AI-generated information cards:
+ * - "Was ist das?" (explain) — layman-friendly diagnosis explanation
+ * - "Wer behandelt das?" (specialist) — recommended doctor / specialist + extradoc.ch link
+ * - "Wie wird behandelt?" (guidance) — initial treatment steps
+ *
+ * Each block independently shows a loading spinner, error state, or the
+ * formatted AI response via dangerouslySetInnerHTML (content comes from
+ * the trusted backend / Gemini API).
+ *
+ * @component
+ * @param {Object} props
+ * @param {{ loading: boolean, data: string|null, error: string|null }} props.explain    - Explain block state
+ * @param {{ loading: boolean, data: string|null, error: string|null }} props.specialist - Specialist block state
+ * @param {{ loading: boolean, data: string|null, error: string|null }} props.guidance   - Guidance block state
+ */
 import React from 'react';
 import { formatText } from '../../utils/helpers';
 

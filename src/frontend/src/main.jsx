@@ -1,3 +1,8 @@
+/**
+ * @module main
+ * @description Application entry point. Mounts the root React component
+ * inside StrictMode into the DOM element with id "root".
+ */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

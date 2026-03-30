@@ -1,3 +1,18 @@
+/**
+ * @module SubcodesPanel
+ * @description Expandable/collapsible panel listing the ICD-10 subcodes
+ * (4-digit specialisations) of the current 3-digit diagnosis category.
+ * Each row shows the code, title, and a relative relevance bar based on
+ * synonym count. Clicking a subcode navigates to that specific diagnosis.
+ *
+ * @component
+ * @param {Object} props
+ * @param {Array}    props.subcodes              - Array of {code, title, synonym_count}
+ * @param {boolean}  props.subcodesOpen          - Whether the panel is expanded
+ * @param {Function} props.setSubcodesOpen       - Toggle setter for expansion state
+ * @param {Function} props.handleSelectCondition - Callback when a subcode row is clicked
+ * @returns {React.JSX.Element|null} Returns null when subcodes is empty
+ */
 import React from 'react';
 
 const SubcodesPanel = ({ subcodes, subcodesOpen, setSubcodesOpen, handleSelectCondition }) => {

@@ -1,4 +1,6 @@
-# ICD-10 AI Prompt Engineer – Test Anleitung
+# ICD-10 AI Prompt Engineer: Test Anleitung (Stand 30.03.2026)
+
+> **Hinweis:** Diese Anleitung wurde in die [README.md](README.md) (Abschnitt "Schnellstart") und das [Benutzerhandbuch](docs/benutzerhandbuch.md) (Anhang A) integriert.
 
 Diese Anleitung beschreibt detailliert, wie du das Projekt lokal über das Terminal (ohne Docker Desktop UI-Klicks) startest und testest. Die Befehle sind für macOS und Windows aufbereitet.
 

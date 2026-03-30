@@ -1,3 +1,18 @@
+/**
+ * @module AlphabetIndex
+ * @description Renders an A-Z navigation with clickable letter buttons and a
+ * filtered list of pre-cached ICD-10 diagnoses. Extracts unique starting
+ * letters from the conditions array and displays matching entries as
+ * pill-shaped links.
+ *
+ * @component
+ * @param {Object} props
+ * @param {Array}    props.cachedConditions       - Array of {code, title} objects from /api/cached-conditions
+ * @param {string}   props.activeLetter          - Currently selected letter filter
+ * @param {Function} props.setActiveLetter       - Setter to change the active letter
+ * @param {Function} props.handleSelectCondition - Callback when a condition pill is clicked
+ * @returns {React.JSX.Element|null} Returns null when cachedConditions is empty
+ */
 import React from 'react';
 import { slugify } from '../../utils/helpers';
 

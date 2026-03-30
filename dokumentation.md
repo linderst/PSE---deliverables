@@ -1,12 +1,14 @@
-# Projektdokumentation: ICD-10 Prompt Engineer Backend & Frontend (V1.0)
-**Datum:** 20. März 2026
+# Projektdokumentation: ICD-10 Prompt Engineer Backend & Frontend
+**Datum:** 20. März 2026 (aktualisiert: 30. März 2026)
 
-Dieses Dokument bietet einen detaillierten, technischen Überblick über die fertige Version 1.0 des KI-gestützten Diagnosesystems – basierend auf der offiziellen ICD-10 Datenbasis des BfArM.
+//TODO noch Backend einfügen
+> **Hinweis:** Für die aktuelle Design-Dokumentation siehe [Frontend Design-Dokumentation](docs/design/frontend_design.md) und das [Benutzerhandbuch](docs/benutzerhandbuch.md).
 
+Dieses Dokument bietet einen detaillierten, technischen Überblick über die Version 1.0 des KI-gestützten Diagnosesystems.
 ---
 
 ## 1. Datenbank-Schema & Importer (`database.sql`, `import_icd.py`, `import_meili.py`)
-- **Vektor-Dimensionen**: Die Tabelle `icd_embedding` nutzt das Schema `embedding vector(384)`, passgenau für das verwendete Open-Source SentenceTransformer Modell (`paraphrase-multilingual-MiniLM-L12-v2`).
+- **Vektor-Dimensionen**: Die Tabelle `icd_embedding` nutzt das Schema `embedding vector(3072)`, passgenau für die Google Gemini Embedding API (`gemini-embedding-001`).
 - **Importer-Härtung (`import_icd.py`)**: Das Skript bereinigt Regex und fehlerhafte Anhängsel der BfArM-Kataloge (z.B. `code.rstrip('+*')`). Unbekannte Codes werden intelligent abgefangen, um PostgreSQL-Abstürze bei unvollständigen XML-Knoten zu vermeiden.
 - **Meilisearch (`import_meili.py`)**: Ein dedizierter Importer speichert ICD-Codes samt Titeln in der hochperformanten Suchmaschine Meilisearch für schnelle Text-Indizierung.
 
