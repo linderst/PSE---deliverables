@@ -1,3 +1,16 @@
+/**
+ * @module OtherMatches
+ * @description Renders alternative diagnosis results as a horizontal row of
+ * clickable chips. Each chip shows the ICD-10 code; a tooltip on hover
+ * reveals the full title and confidence percentage. High-confidence matches
+ * (score >= 0.95) receive a green highlight and a checkmark badge.
+ *
+ * @component
+ * @param {Object} props
+ * @param {Array}    props.otherMatches          - Array of {code, title, score} objects
+ * @param {Function} props.handleSelectCondition - Callback when a chip is clicked
+ * @returns {React.JSX.Element|null} Returns null when otherMatches is empty
+ */
 import React from 'react';
 
 const OtherMatches = ({ otherMatches, handleSelectCondition }) => {

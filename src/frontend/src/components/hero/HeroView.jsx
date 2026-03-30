@@ -1,3 +1,19 @@
+/**
+ * @module HeroView
+ * @description Landing page ("hero") of the Medcode application.
+ * Displays the main search input and an alphabetical index of cached
+ * diagnoses. Acts as the entry point before any search is performed.
+ *
+ * @component
+ * @param {Object} props
+ * @param {string}   props.searchTerm            - Current value of the search input
+ * @param {Function} props.setSearchTerm         - Setter for the search input value
+ * @param {Function} props.handleSearch          - Triggers a diagnosis search
+ * @param {Array}    props.cachedConditions       - Pre-loaded diagnoses for the A-Z index
+ * @param {string}   props.activeLetter          - Currently selected letter in the alphabet nav
+ * @param {Function} props.setActiveLetter       - Setter for the active letter filter
+ * @param {Function} props.handleSelectCondition - Callback when a cached condition is clicked
+ */
 import React from 'react';
 import AlphabetIndex from './AlphabetIndex';
 

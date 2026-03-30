@@ -1,3 +1,19 @@
+/**
+ * @module MatchCard
+ * @description Displays the primary diagnosis result as a prominent card.
+ * Shows the ICD-10 code badge, diagnosis title, catalog version, and a
+ * circular SVG confidence tachometer (0-100%). During loading, renders an
+ * animated spinner with contextual messages. Displays a "KI-verfeinert"
+ * badge when results were improved by Gemini AI refinement.
+ *
+ * @component
+ * @param {Object} props
+ * @param {boolean}     props.searchLoading    - Whether a search is currently in progress
+ * @param {Object|null} props.currentCondition - The primary result {code, title, version, score}
+ * @param {string|null} props.searchError      - Error message if search failed
+ * @param {boolean}     props.longLoading      - True when search exceeds 2.5s (Gemini fallback active)
+ * @param {boolean}     props.searchRefined    - True when results were improved by AI refinement
+ */
 import React from 'react';
 import LoadingDots from '../ui/LoadingDots';
 
