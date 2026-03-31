@@ -1,13 +1,33 @@
+"""
+main.py
+
+Description: Handles the logic of the website setup, search algorithm and the answer generation/retrival.
+"""
+# Standard library
 import os
 import re
+
+# Third-party — Web framework
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import psycopg2
-from google import genai
 from fastapi.middleware.cors import CORSMiddleware
+
+# Third-party — Data validation
+from pydantic import BaseModel
+
+# Third-party — Database
+import psycopg2
+
+# Third-party — AI / Google
+from google import genai
+
+# Third-party — Type hints
 from typing import List, Dict, Any, Optional
-from medical_synonyms import expand_query
+
+# Third-party — Search
 import meilisearch
+
+# Internal
+from medical_synonyms import expand_query
 
 app = FastAPI(title="Medcode API")
 
@@ -47,6 +67,17 @@ except Exception as e:
 
 # --- Database Connection ---
 def get_db_connection():
+    """
+    Creates and returns the PostgreSQL database connection.
+
+    Uses the globally configured database credentials (DB_HOST, DB_NAME,
+    DB_USER, DB_PASSWORD) to establish the connection (from the .env file).
+
+    Returns:
+        psycopg2.connection: An active database connection object if
+            successful, or None if the connection attempt fails.
+        Exception error, if unsucessful.
+    """
     try:
         conn = psycopg2.connect(
             host=DB_HOST,
@@ -61,39 +92,199 @@ def get_db_connection():
 
 # --- Data Models ---
 class SearchResult(BaseModel):
+    """
+    Represents a single ICD-10 search result entry.
+
+    Attributes:
+        code (str): The ICD-10 code for the diagnosis.
+        title (str): The name of the diagnosis.
+        score (float): Relevance score of the result, used for ranking.
+        version (str): The ICD-10 version the code belongs to.
+
+    Example:
+        {
+            "code": "I21",
+            "title": "Acute myocardial infarction",
+            "score": 0.94,
+            "version": "2025"
+        }
+    """
     code: str
     title: str
     score: float = 0.0
     version: str = "2024"
 
 class SearchResponse(BaseModel):
+    """
+    Response body schema for an ICD-10 search query.
+
+    Wraps a list of SearchResult objects returned by the search
+    endpoint. FastAPI uses this model to serialize the response
+    into JSON automatically.
+
+    Attributes:
+        results (List[SearchResult]): Ordered list of matching ICD-10
+            entries, ranked by relevance score descending.
+
+    Example:
+        {
+            "results": [
+                {
+                    "code": "I21",
+                    "title": "Acute myocardial infarction",
+                    "score": 0.94,
+                    "version": "2024"
+                },
+                {
+                    "code": "I20",
+                    "title": "Angina pectoris",
+                    "score": 0.87,
+                    "version": "2024"
+                }
+            ]
+        }
+    """
     results: List[SearchResult]
 
 class ChatRequest(BaseModel):
+    """
+    Request body schema for a general chat query.
+
+    Attributes:
+        question (str): The medical term searched by the user.
+
+    Example:
+        {
+            "question": "Herzinfarkt"
+        }
+    """
     question: str
 
 class ContextualChatRequest(BaseModel):
+    """
+    Request body schema for a contextual chat query.
+
+    Represents the data a client must send when asking a question
+    in the context of a specific ICD-10 diagnosis. FastAPI uses this
+    model to automatically validate and parse the incoming JSON body.
+
+    Attributes:
+        question (str): The medical question asked by the user.
+        condition_code (str): The ICD-10 code for the diagnosis context.
+        condition_title (str): The human-readable name of the diagnosis.
+
+    Example:
+        {
+            "question": "What are the common treatment options?",
+            "condition_code": "I21",
+            "condition_title": "Acute myocardial infarction"
+        }
+    """
     question: str
     condition_code: str
     condition_title: str
 
 class ChatResponse(BaseModel):
+    """
+    Response body schema for a general chat query.
+
+    Wraps the AI-generated answer to a user's medical question,
+    along with a flag indicating whether a medical disclaimer
+    should be displayed in the frontend.
+
+    Attributes:
+        answer (str): The AI-generated response to the user's question.
+        disclaimer (bool): If True, the frontend should display a disclaimer
+            warning the user to consult a medical professional.
+            Defaults to False.
+
+    Example:
+        {
+            "answer": "Type 1 diabetes is an autoimmune condition where...",
+            "disclaimer": True
+        }
+    """
     answer: str
     disclaimer: bool = False
 
 class SubcodeResult(BaseModel):
+    """
+    Represents a single ICD-10 subcode entry under a parent code.
+
+    Used to display the hierarchical breakdown of an ICD-10 code
+    into its more specific child codes.
+
+    Attributes:
+        code (str): The ICD-10 subcode.
+        title (str): The name of the subcode.
+        synonym_count (int): Number of synonyms associated with this subcode.
+        is_leaf (Optional[bool]): If True, this subcode has no further
+            child codes beneath it. If False, further subcodes exist.
+            None if this information is not available.
+    Example:
+        {
+            "code": "I21.0",
+            "title": "Acute transmural myocardial infarction of anterior wall",
+            "synonym_count": 3,
+            "is_leaf": True
+        }
+    """
     code: str
     title: str
     synonym_count: int = 0
     is_leaf: Optional[bool] = None
 
 class SubcodeResponse(BaseModel):
+    """
+    Response body schema for an ICD-10 subcode lookup.
+
+    Returns the parent diagnosis alongside all of its direct child
+    subcodes, allowing the frontend to render the hierarchical
+    structure of an ICD-10 code.
+
+    Attributes:
+        parent_code (str): The ICD-10 code of the parent diagnosis.
+        parent_title (str): The human-readable name of the parent diagnosis.
+        subcodes (List[SubcodeResult]): All direct child subcodes
+            belonging to the parent code, ordered by code ascending.
+    Example:
+        {
+            "parent_code": "I21",
+            "parent_title": "Acute myocardial infarction",
+            "subcodes": [
+                {
+                    "code": "I21.0",
+                    "title": "Acute transmural myocardial infarction of anterior wall",
+                    "synonym_count": 3,
+                    "is_leaf": true
+                },
+                {
+                    "code": "I21.1",
+                    "title": "Acute transmural myocardial infarction of inferior wall",
+                    "synonym_count": 2,
+                    "is_leaf": true
+                }
+            ]
+        }
+    """
+    
     parent_code: str
     parent_title: str
     subcodes: List[SubcodeResult]
 
 # --- Helper ---
 def ask_gemini(prompt: str) -> str:
+     """
+    Returns LLM-generated (gemini) answer based on input string (promt).
+
+    Returns:
+        Error message, if API key is missing
+        response.text: The generated answer text.
+
+    Example:
+        promt = "Explain this medical condition to me."
+        response.text = "This medical condition is commenly referred to ..."
+    """
     if not genai_client:
         return "Gemini API key is missing. Cannot generate response."
     try:
