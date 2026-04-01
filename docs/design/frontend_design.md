@@ -15,8 +15,8 @@ Die Applikation ist eine **Single Page Application (SPA)** ohne serverseitiges R
 
 ## 2. Komponentendiagramm
 
-//TODO: UML-Klassendiagramm erstellen
-[UML-Klassendiagramm hier einfügen]
+<img width="3709" height="864" alt="Klassendiagram Frontend" src="https://github.com/user-attachments/assets/d7fd4ce3-36e4-4c8f-b53c-f3d6e90a5c65" />
+
 
 
 ### Erläuterung der Beziehungen
