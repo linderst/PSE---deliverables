@@ -1,203 +1,201 @@
 """
     services/search_service.py
 
-    Description: 
+    Description: Handles ICD-10 Search functionality by utilizing
+                 Meilisearch, pgvector, and Google Gemini APIs.
 """
 # Standard library
 import os
 import re
 
 # Internal
-from models import SearchResponse, SearchResult, ChatRequest, ChatResponse, ContextualChatRequest
-from models import SubcodeResponse, SubcodeResult
-from services.db_service import run_vector_search_query, get_icd_code_direct
-from services.chat_service import ask_gemini
+from models import SearchResponse, SearchResult
 from medical_synonyms import expand_query
-from config import genai_client
-from config import meili_index, meili_client
+from services.db_service import DatabaseService
+from services.chat_service import ChatService
 
-
-def _get_gemini_embedding(text: str) -> list[float]:
-    """Generate embedding using Google Gemini API instead of local model."""
-    if not genai_client:
-        return []
-    resp = genai_client.models.embed_content(
-        model="gemini-embedding-001",
-        contents=text,
-        config={"task_type": "RETRIEVAL_QUERY"}
-    )
-    return resp.embeddings[0].values
-
-def _run_vector_search(q_text: str, limit: int, conn) -> list[SearchResult]:
+class SearchService:
     """
-    Embeds a query and runs a combined-score vector search against ICD codes.
+    SearchService coordinates queries between direct code matching,
+    Meilisearch typo-tolerant searching, and pgvector semantic searching.
     """
-    expanded = expand_query(q_text)
-    embedding = _get_gemini_embedding(expanded)
+    def __init__(self, db_service: DatabaseService, chat_service: ChatService, genai_client, meili_index):
+        self.db = db_service
+        self.chat_service = chat_service
+        self.genai_client = genai_client
+        self.meili_index = meili_index
 
-    if not embedding:
-        # TODO report/catch error!
-        return []
-
-    rows = run_vector_search_query(embedding, limit)
-    out = []
-    for row in rows:
-        raw_sim = float(row[2]) if row[2] is not None else 0.0
-        scaled_score = max(0.0, (raw_sim - 0.75) / 0.25)
-        if scaled_score >= 0.20:
-            out.append(SearchResult(
-                code=row[0],
-                title=row[1] or "Unbekannte Diagnose",
-                score=round(scaled_score, 3)
-            ))
-    out.sort(key=lambda x: x.score, reverse=True)
-    return out
-
-def perform_search(q: str, limit: int = 5):
-    """
-    Hybrid search:
-    1. Direct ICD code recognition (e.g. 'R51' → score 1.0)
-    2. Meilisearch (fast, typo-tolerant, synonym-aware) — PRIMARY
-    3. pgvector fallback if Meilisearch is unavailable
-    """
-    q = q.strip()
-    if not q:
-        return SearchResponse(results=[])
-
-    # ── 1. Direct ICD code detection ─────────────────────────────────────────
-    icd_pattern = re.compile(r'^[A-Z]\d{2}(\.\d+)?$', re.IGNORECASE)
-    if icd_pattern.match(q):
-        three_digit = q[:3].upper()
-        row = get_icd_code_direct(three_digit)
-        if row:
-            return SearchResponse(results=[
-                SearchResult(code=row[0], title=row[1] or "Unbekannte Diagnose", score=1.0)
-            ])
-
-    # ── 2. Try Meilisearch ───────────────────────────────────────────────────
-    if meili_index is not None:
+    def _get_gemini_embedding(self, text: str) -> list[float]:
+        """Generate embedding using Google Gemini API instead of local model."""
+        if not self.genai_client:
+            return []
         try:
-            # Meilisearch handles typos, synonyms, and German morphology natively
-            search_result = meili_index.search(q, {
-                "limit": limit * 3,   # get more candidates to deduplicate by 3-digit code
-                "attributesToRetrieve": ["code", "title"],
-                "showRankingScore": True
-            })
-            hits = search_result.get("hits", [])
-            if hits:
-                # Deduplicate by 3-digit code
-                seen = {}
-                for hit in hits:
-                    code3 = hit["code"][:3]
-                    if code3 not in seen:
-                        # Use actual Meilisearch ranking score (0.0 to 1.0)
-                        # Only perfect exact matches will get 1.0. Typos/partial matches get less.
-                        raw_score = hit.get("_rankingScore", 0.5)
-                        
-                        seen[code3] = SearchResult(
-                            code=code3,
-                            title=hit.get("title") or "Unbekannte Diagnose",
-                            score=round(raw_score, 3)
-                        )
-                    if len(seen) >= limit:
-                        break
-
-                if seen:
-                    best_match = list(seen.values())[0]
-                    if best_match.score >= 0.75:
-                        print(f"[meili] '{q}' → {[r.code for r in seen.values()]}")
-                        # Only return results that meet the 0.75 threshold
-                        filtered_results = [r for r in seen.values() if r.score >= 0.75]
-                        return SearchResponse(results=filtered_results)
-                    else:
-                        print(f"[meili] Top score {best_match.score} < 0.75, falling back to pgvector")
+            resp = self.genai_client.models.embed_content(
+                model="gemini-embedding-001",
+                contents=text,
+                config={"task_type": "RETRIEVAL_QUERY"}
+            )
+            return resp.embeddings[0].values
         except Exception as e:
-            print(f"[meili] Error, falling back to vector search: {e}")
+            print(f"Error generating embedding: {e}")
+            return []
 
+    def _run_vector_search(self, q_text: str, limit: int) -> list[SearchResult]:
+        """
+        Embeds a query and runs a combined-score vector search against ICD codes.
+        """
+        expanded = expand_query(q_text)
+        embedding = self._get_gemini_embedding(expanded)
 
-    # ── 3. pgvector fallback ─────────────────────────────────────────────────
-    results = _run_vector_search(q, limit)
-    return SearchResponse(results=results)
+        if not embedding:
+            return []
 
-def perform_refined_search(q: str, limit: int = 5):
-    """
-    Gemini-enhanced search:
-    1. Ask Gemini to extract 5 medical ICD-10 terms from the plain-language query
-    2. Run vector search with those terms
-    This endpoint is called in parallel with the fast /api/search — the frontend
-    shows instant results from /api/search and quietly upgrades them if /api/search/refined
-    returns a meaningfully different top result.
-    """
-    #TODO refactor database part in this function as function to db_service.py
-    ()
-    q = q.strip()
-    if not q:
-        return SearchResponse(results=[])
+        rows = self.db.run_vector_search_query(embedding, limit)
+        out = []
+        for row in rows:
+            raw_sim = float(row[2]) if row[2] is not None else 0.0
+            # Raw similarity threshold: 0.73 (previously effective threshold was 0.80, too strict).
+            # We expose raw_sim directly as the score so the UI can display meaningful percentages.
+            if raw_sim >= 0.73:
+                out.append(SearchResult(
+                    code=row[0],
+                    title=row[1] or "Unbekannte Diagnose",
+                    score=round(raw_sim, 3)
+                ))
+        out.sort(key=lambda x: x.score, reverse=True)
+        return out
 
-    conn = get_db_connection()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Database connection failed")
+    def perform_search(self, q: str, limit: int = 5) -> SearchResponse:
+        """
+        Hybrid search:
+        1. Direct ICD code recognition (e.g. 'R51' → score 1.0)
+        2. Meilisearch (fast, typo-tolerant, synonym-aware) — PRIMARY
+        3. pgvector fallback if Meilisearch is unavailable
+        """
+        q = q.strip()
+        if not q:
+            return SearchResponse(results=[])
 
-    try:
-        # Step 1: Gemini extracts medical terminology from the plain-language input
-        prompt = (
-            f"Du bist ein medizinischer Kodierassistent für ICD-10. "
-            f"Der Nutzer hat folgende Symptome oder Beschwerden beschrieben: \"{q}\"\n"
-            f"Gib mir genau 5 medizinische Fachbegriffe oder ICD-10-Diagnosen, die am besten passen. "
-            f"Antworte NUR mit den 5 Begriffen, durch Komma getrennt, ohne Erklärung. Auf Deutsch."
-        )
-        gemini_response = ask_gemini(prompt)
+        # ── 1. Direct ICD code detection ─────────────────────────────────────────
+        icd_pattern = re.compile(r'^[A-Z]\d{2}(\.\d+)?$', re.IGNORECASE)
+        if icd_pattern.match(q):
+            three_digit = q[:3].upper()
+            row = self.db.get_icd_code_direct(three_digit)
+            if row:
+                return SearchResponse(results=[
+                    SearchResult(code=row[0], title=row[1] or "Unbekannte Diagnose", score=1.0)
+                ])
 
-        # If Gemini failed or returned an error, fall back to plain search
-        if gemini_response.startswith("Error") or not gemini_response.strip():
-            results = _run_vector_search(q, limit, conn)
-            return SearchResponse(results=results[:limit])
-
-        # Combine original query + Gemini terms for maximum recall
-        expanded_query = q + " " + gemini_response.strip()
-        print(f"[refined] Original: '{q}' → Gemini expanded: '{gemini_response.strip()}'")
-
-        # Step 2: Try Meilisearch with the extracted expert terms individually
-        terms = [t.strip() for t in gemini_response.split(",") if t.strip()]
-        all_meili_hits = {}
-        
-        if meili_index is not None:
-            for term in terms:
-                try:
-                    ms_res = meili_index.search(term, {
-                        "limit": 3,
-                        "attributesToRetrieve": ["code", "title"],
-                        "showRankingScore": True
-                    })
-                    hits = ms_res.get("hits", [])
+        # ── 2. Try Meilisearch ───────────────────────────────────────────────────
+        if self.meili_index is not None:
+            try:
+                search_result = self.meili_index.search(q, {
+                    "limit": limit * 5,   # fetch more candidates to account for deduplication
+                    "attributesToRetrieve": ["code", "title"],
+                    "showRankingScore": True
+                })
+                hits = search_result.get("hits", [])
+                if hits:
+                    seen = {}
                     for hit in hits:
-                        code3 = hit["code"][:3]
-                        score = round(hit.get("_rankingScore", 0.0), 3)
-                        # Keep the highest score for a code across all terms
-                        if code3 not in all_meili_hits or score > all_meili_hits[code3].score:
-                            all_meili_hits[code3] = SearchResult(
+                        code_full = hit["code"]
+                        code3 = code_full[:3]
+                        raw_score = hit.get("_rankingScore", 0.5)
+
+                        # Subcodes (e.g. O24.1) are penalised by 15% so that the
+                        # 3-digit parent code wins when both appear in results.
+                        # Without this, O24.1 "Diabetes Typ 2 in der Schwangerschaft"
+                        # would beat E11 "Diabetes mellitus Typ 2" for the query
+                        # "diabetes typ 2" because it contains more matching words.
+                        is_parent_code = len(code_full) == 3
+                        effective_score = raw_score if is_parent_code else raw_score * 0.85
+
+                        # Keep the best effective score per 3-digit group
+                        if code3 not in seen or effective_score > seen[code3].score:
+                            seen[code3] = SearchResult(
                                 code=code3,
                                 title=hit.get("title") or "Unbekannte Diagnose",
-                                score=score
+                                score=round(effective_score, 3)
                             )
-                except Exception as e:
-                    print(f"[refined-meili] Error searching term '{term}': {e}")
+
+                    # Sort by effective score (best first) and apply limit
+                    sorted_results = sorted(seen.values(), key=lambda r: r.score, reverse=True)[:limit]
+
+                    if sorted_results:
+                        best_match = sorted_results[0]
+                        if best_match.score >= 0.75:
+                            print(f"[meili] '{q}' → {[r.code for r in sorted_results]}")
+                            filtered_results = [r for r in sorted_results if r.score >= 0.75]
+                            return SearchResponse(results=filtered_results)
+                        else:
+                            print(f"[meili] Top score {best_match.score} < 0.75, falling back to pgvector")
+            except Exception as e:
+                print(f"[meili] Error, falling back to vector search: {e}")
+
+        # ── 3. pgvector fallback ─────────────────────────────────────────────────
+        results = self._run_vector_search(q, limit)
+        return SearchResponse(results=results)
+
+    def perform_refined_search(self, q: str, limit: int = 5) -> SearchResponse:
+        """
+        Gemini-enhanced search:
+        1. Ask Gemini to extract 5 medical ICD-10 terms from the plain-language query
+        2. Run vector search with those terms
+        """
+        q = q.strip()
+        if not q:
+            return SearchResponse(results=[])
+
+        try:
+            prompt = (
+                f"Du bist ein medizinischer Kodierassistent für ICD-10. "
+                f"Der Nutzer hat folgende Symptome oder Beschwerden beschrieben: \"{q}\"\n"
+                f"Gib mir genau 5 medizinische Fachbegriffe oder ICD-10-Diagnosen, die am besten passen. "
+                f"Antworte NUR mit den 5 Begriffen, durch Komma getrennt, ohne Erklärung. Auf Deutsch."
+            )
+            gemini_response = self.chat_service.ask_gemini(prompt)
+
+            if gemini_response.startswith("Error") or not gemini_response.strip() or gemini_response.startswith("Gemini API key"):
+                results = self._run_vector_search(q, limit)
+                return SearchResponse(results=results[:limit])
+
+            expanded_query = q + " " + gemini_response.strip()
+            print(f"[refined] Original: '{q}' → Gemini expanded: '{gemini_response.strip()}'")
+
+            terms = [t.strip() for t in gemini_response.split(",") if t.strip()]
+            all_meili_hits = {}
             
-            if all_meili_hits:
-                # Sort all hits by score
-                sorted_hits = sorted(all_meili_hits.values(), key=lambda x: x.score, reverse=True)
-                best_match = sorted_hits[0]
+            if self.meili_index is not None:
+                for term in terms:
+                    try:
+                        ms_res = self.meili_index.search(term, {
+                            "limit": 3,
+                            "attributesToRetrieve": ["code", "title"],
+                            "showRankingScore": True
+                        })
+                        hits = ms_res.get("hits", [])
+                        for hit in hits:
+                            code3 = hit["code"][:3]
+                            score = round(hit.get("_rankingScore", 0.0), 3)
+                            if code3 not in all_meili_hits or score > all_meili_hits[code3].score:
+                                all_meili_hits[code3] = SearchResult(
+                                    code=code3,
+                                    title=hit.get("title") or "Unbekannte Diagnose",
+                                    score=score
+                                )
+                    except Exception as e:
+                        print(f"[refined-meili] Error searching term '{term}': {e}")
                 
-                # If we found a very confident exact match for any of the Gemini terms
-                if best_match.score >= 0.75:
-                    print(f"[refined-meili] Strong match found for expert terms: {best_match.code} ({best_match.score})")
-                    filtered_results = [r for r in sorted_hits if r.score >= 0.70]
-                    return SearchResponse(results=filtered_results[:limit])
+                if all_meili_hits:
+                    sorted_hits = sorted(all_meili_hits.values(), key=lambda x: x.score, reverse=True)
+                    best_match = sorted_hits[0]
+                    if best_match.score >= 0.75:
+                        print(f"[refined-meili] Strong match found for expert terms: {best_match.code} ({best_match.score})")
+                        filtered_results = [r for r in sorted_hits if r.score >= 0.70]
+                        return SearchResponse(results=filtered_results[:limit])
 
-        # Step 3: If Meilisearch didn't find a strong match, run the heavy vector search
-        results = _run_vector_search(expanded_query, limit, conn)
-        return SearchResponse(results=results[:limit])
+            results = self._run_vector_search(expanded_query, limit)
+            return SearchResponse(results=results[:limit])
 
-    finally:
-        if conn:
-            conn.close()
+        finally:
+            pass
