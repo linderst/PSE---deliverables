@@ -18,8 +18,17 @@ from typing import List, Dict, Any, Optional
 # Internal
 from routers import search as search_router, chat as chat_router, subcodes as subcodes_router
 from routers import seo_cache as seo_router
+from dependencies import db_service
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Medcode API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # db_service establishes connection pool on startup
+    yield
+    # Cleanup DB connection pool gracefully
+    db_service.close()
+
+app = FastAPI(title="Medcode API", lifespan=lifespan)
 
 # Setup CORS so the frontend can communicate with the backend
 app.add_middleware(

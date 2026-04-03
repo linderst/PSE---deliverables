@@ -9,17 +9,21 @@ import os
 import re
 
 # Third-party — Web framework
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
 
 # Internal
 from models import SubcodeResponse, SubcodeResult
-from services.db_service import get_cached_conditions_from_db, get_sitemap_codes
+from dependencies import get_db_service
+from services.db_service import DatabaseService
 
 router = APIRouter()
 
 
 @router.get("/api/cached-conditions")
-def get_cached_conditions():
+def get_cached_conditions(
+    db_service: Annotated[DatabaseService, Depends(get_db_service)]
+):
     """
     GET /api/cached-conditions
 
@@ -33,7 +37,7 @@ def get_cached_conditions():
     Raises:
         HTTPException 500: If the database connection fails.
     """
-    rows = get_cached_conditions_from_db()
+    rows = db_service.get_cached_conditions_from_db()
 
     if not rows:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -45,7 +49,9 @@ def get_cached_conditions():
     return {"conditions": results}
 
 @router.get("/sitemap.xml")
-def get_sitemap():
+def get_sitemap(
+    db_service: Annotated[DatabaseService, Depends(get_db_service)]
+):
     """
     Generates a dynamic sitemap.xml for all cached diseases
     to improve Google / Search Engine indexing.
@@ -53,7 +59,7 @@ def get_sitemap():
     import datetime
     from fastapi import Response
 
-    rows = get_sitemap_codes()
+    rows = db_service.get_sitemap_codes()
     if not rows:
         raise HTTPException(status_code=500, detail="Database connection failed")
         
