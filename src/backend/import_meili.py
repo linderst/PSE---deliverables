@@ -5,12 +5,15 @@ Imports all ICD-10 codes and their synonyms from PostgreSQL into Meilisearch.
 Run once (or after DB updates) with:
     docker compose --profile import run meili-importer
 
-What gets indexed per document:
-  - code: "R51"
-  - title: "Kopfschmerz"
-  - synonyms: aggregated from icd_synonym table
-  - search_text: combined field — what Meilisearch searches against
-  - kind: category type from icd_class
+Indexing design:
+  - Only synonyms directly on 3-digit codes (e.g. F40, E11) are indexed in
+    search_text. Subcode synonyms (F40.0, E11.1, ...) are intentionally excluded.
+  - Reason: aggregating subcode synonyms caused false boosts (e.g. O24 ranked
+    above E11 for "diabetes typ 2", because O24.1 has synonym "Diabetes Typ 2
+    bei Schwangerschaft"). The lower-priority attribute trick didn't help because
+    Meilisearch's attribute rule only looks at the FIRST attribute with ANY match.
+  - Typo tolerance thresholds are lowered (4/6 instead of 5/8) so that heavily
+    misspelled words like "angssörung" still match "Angststörungen" in the title.
 """
 
 import os
@@ -18,6 +21,7 @@ import psycopg2
 import meilisearch
 from tqdm import tqdm
 from dotenv import load_dotenv
+from collections import defaultdict
 
 load_dotenv()
 
@@ -83,7 +87,6 @@ SYNONYMS = {
 }
 
 
-
 def main():
     # ── Connect to PostgreSQL ───────────────────────────────────────────────
     print("Connecting to PostgreSQL...")
@@ -113,7 +116,9 @@ def main():
         ],
         "typoTolerance": {
             "enabled": True,
-            "minWordSizeForTypos": {"oneTypo": 5, "twoTypos": 8}
+            # Lowered from defaults (5/8) so that heavily misspelled words
+            # like "angssörung" still match "Angststörungen" in the title.
+            "minWordSizeForTypos": {"oneTypo": 4, "twoTypos": 6}
         },
         "synonyms": SYNONYMS,
     })
@@ -129,42 +134,39 @@ def main():
     classes = cur.fetchall()
     print(f"  {len(classes)} 3-digit classes found")
 
-    # ── Fetch all synonyms, group by 3-digit parent code ─────────────────────
-    print("Fetching synonyms...")
+    # ── Fetch synonyms — 3-digit codes ONLY ──────────────────────────────────
+    # We ONLY use synonyms directly on the 3-digit code (e.g. icd_code = 'F40'),
+    # NOT on subcodes (F40.0, F40.10, ...).
+    #
+    # Why: Aggregating subcode synonyms causes false boosts. E.g. O24.1 has
+    # synonym "Diabetes mellitus Typ 2 bei Schwangerschaft", which — when
+    # grouped under O24 — makes Meilisearch rank O24 above E11 for the query
+    # "diabetes typ 2". Meilisearch's attribute-priority ranking can't fix this
+    # because it only checks the FIRST attribute with ANY matching term.
+    #
+    # Misspelled queries (e.g. "angssörung") are handled by the lowered typo
+    # tolerance thresholds above — they match the 3-digit code's own title
+    # (e.g. "Andere Angststörungen" for F41) even with heavy typos.
+    print("Fetching synonyms (3-digit codes only)...")
     cur.execute("""
-        SELECT SUBSTRING(icd_code, 1, 3) AS code3, term
+        SELECT icd_code AS code3, term
         FROM icd_synonym
         WHERE icd_code IS NOT NULL
+          AND LENGTH(icd_code) = 3
     """)
-    from collections import defaultdict
     synonyms_by_code = defaultdict(list)
     for code3, term in cur.fetchall():
         synonyms_by_code[code3].append(term)
-    print(f"  {sum(len(v) for v in synonyms_by_code.values())} synonym entries loaded")
-
-    # ── Also include 4+ digit codes collapsed into parent ────────────────────
-    cur.execute("""
-        SELECT SUBSTRING(code, 1, 3) AS code3, title
-        FROM icd_class
-        WHERE LENGTH(code) > 3
-        ORDER BY code
-    """)
-    child_titles_by_code = defaultdict(list)
-    for code3, title in cur.fetchall():
-        if title:
-            child_titles_by_code[code3].append(title)
+    total = sum(len(v) for v in synonyms_by_code.values())
+    print(f"  {total} direct synonym entries loaded")
 
     # ── Build documents ───────────────────────────────────────────────────────
     print("Building Meilisearch documents...")
     documents = []
     for code, title, kind in tqdm(classes):
         synonyms = synonyms_by_code.get(code, [])
-        child_titles = child_titles_by_code.get(code, [])
-
-        # Combine everything into a single search_text field
         parts = [code, title or ""]
-        parts += synonyms[:50]        # limit to avoid huge documents
-        parts += child_titles[:30]    # sub-codes enrich the parent
+        parts += synonyms[:50]  # cap to avoid huge documents
         search_text = " ".join(p for p in parts if p)
 
         documents.append({
