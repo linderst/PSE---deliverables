@@ -9,12 +9,12 @@
 
 | Name | anwesend |
 |---|---|
-| Felix Buchmüller  | |
-| Alexander Bot     | |
-| Stefan Linder     | |
-| Christian Gafner  | |
+| Felix Buchmüller  |x|
+| Alexander Bot     |x|
+| Stefan Linder     |x|
+| Christian Gafner  |x|
 | Dennis Roduner    |x|
-| Julien Chopin     | |
+| Julien Chopin     |x|
 
 ## Traktanden
 
@@ -25,7 +25,9 @@
 | 3 | Parallelisierung |
 | 4 | Doku-Stand |
 | 5 | Trello updaten |
-| 6 | Nächste Schritte |
+| 6 | Deliverables |
+| 7 | Deployment Issues |
+| 8 | Nächste Schritte |
 
 ---
 
@@ -34,52 +36,68 @@
 Jeder sagt kurz was er letzte Woche gemacht hat.
 
 Stunden letzte Woche:
-- Felix: 1.5h Kundenkontakt, 2h Backend/Doku, 7h Refactoring
-- Dennis: 3h Frontend-Doku
-- Julien: 4h Parallel-Branch, 1h Orga
-- Stefan: 5h Frontend, 5h Demo
-- Christian: ?
-- Alex: ?
+- Felix: Kundenkontakt, Backend/Doku (begonnen), Refactoring (Hauptfokus)
+- Dennis: Frontend-Doku (Grundstruktur, nächste Woche Dias/Screenshots)
+- Julien: Parallel-Branch, noch nicht viel implementiert, nimmt sich noch weitere Stunden vor
+- Stefan: Frontend, Demo
+- Christian: Testkonzept überarbeitet, beginnt dann mit dem Testing.
+- Alex: TODOs der Frontend Doku implementiert
 
 ---
 
 ### 2 -- Backend-Refactoring
 
-Felix hat main.py aufgeteilt in.
-
-Was gibt es konkretes?
+Felix hat main.py aufgeteilt in routers, models und services für bessere Wartbarkeit.
 
 ---
 
-### 3 -- Parallelisierung: Stand
-
-Was gibt es neues?
-Gibt es schon Tests?
-Wann in main mergen?
-
----
-
-### 7 -- Doku-Stand
+### 4 -- Doku-Stand
 
 - **Dennis:** Frontend-Doku, Benutzerhandbuch, README (nächste Woche weiter Diagramme und Screenshots)
 - **Felix:** Backend-Doku 
+- **Alex:** Unterstützt die Umsetzung beider Dokus. Hat UML-Klassendiagramme erstellt.
 
 ---
 
-### 8 -- Trello updaten
+### 5 -- Trello updaten
 
-Vielleicht sollten alles nochmals ihre Trello-Aufgaben reintun.
+Vielleicht sollten alle nochmals ihre Trello-Aufgaben reintun.
+
+Folgende Personen haben noch Probleme beim Zugang: 
+Alex, Christian
 
 ---
 
-### 9 -- Nächste Schritte
+### 6 -- Deployment Issues auf Server
+
+Es gibt Probleme in unserem Code, der dazu führt, dass es nicht auf dem Server läuft.
+Idee: Stefan helfen. Konkret die Probleme identifizieren.
+
+Stefan ist dran.
+
+---
+
+### 7 -- Deliverables
+
+Präsentationen müssen noch hochgeladen werden (Dennis, Stefan).
+
+
+---
+
+### 8 -- Nächste Schritte
 
 Was steht an für Iteration 3?
-- [ ] Homepage überarbeite
 - [ ] Parallelisierung
-- [ ] Dokumentation fertigstellen
+- [ ] Testings machen
+- [ ] Dokumentation weitestgehend fertigstellen (Höchste Prio, bis Ende Iteration 3)
+- [ ] Deployment auf Server laufen lassen (Höchste Prio, bis nächstes Kundenmeeting)
 
-**Nächste Kundensitzung:** 
+**Nächste Kundensitzung:** 15. April 11-12 Uhr Länggasstrasse 31
+
+**Nächste interne Sitzung:** Evtl. am 8. April
+
+**Nächste Vorlesung:** Präsentation Technologie und Architektur von Julien am 22. April
+Alex hat Schlussdemo am 20. Mai.
 
 ---
 
