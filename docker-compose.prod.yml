@@ -1,0 +1,11 @@
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║  docker-compose.prod.yml — Production overrides                             ║
+# ║                                                                              ║
+# ║  Usage on the server:                                                        ║
+# ║  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d       ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+services:
+  frontend:
+    ports:
+      - "80:80"

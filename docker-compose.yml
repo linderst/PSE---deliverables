@@ -58,8 +58,9 @@ services:
       args:
         VITE_API_BASE_URL: /api
     restart: unless-stopped
-    ports:
-      - "80:80"
+    # Ports are defined in override files:
+    #   - Dev:  docker-compose.override.yml → 5173:5173 (Vite dev server)
+    #   - Prod: docker-compose.prod.yml     → 80:80    (NGINX)
     depends_on:
       - backend
 
