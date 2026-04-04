@@ -1,4 +1,16 @@
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║  docker-compose.yml — PRODUCTION configuration                              ║
+# ║                                                                              ║
+# ║  For LOCAL DEVELOPMENT: Docker automatically loads                           ║
+# ║  docker-compose.override.yml on top of this file, restoring dev ports,       ║
+# ║  hot-reload, and source volumes. Just run: docker compose up                 ║
+# ║                                                                              ║
+# ║  For SERVER DEPLOYMENT: Use only this file:                                  ║
+# ║  docker compose -f docker-compose.yml up -d                                  ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+
 services:
+  # ── PostgreSQL + pgvector ──────────────────────────────────────────────────
   db:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
@@ -6,8 +18,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
+    # No "ports:" here — DB is only accessible within the Docker network.
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./src/backend/database.sql:/docker-entrypoint-initdb.d/init.sql
@@ -17,13 +28,13 @@ services:
       timeout: 5s
       retries: 10
 
+  # ── FastAPI Backend ────────────────────────────────────────────────────────
   backend:
     build:
       context: ./src/backend
       dockerfile: ../../docker/backend/Dockerfile
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    # No "ports:" here — backend is reached via NGINX reverse proxy.
     environment:
       DB_HOST: db
       DB_NAME: ${DB_NAME}
@@ -32,28 +43,38 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       MEILI_URL: http://meilisearch:7700
       MEILI_KEY: ${MEILI_KEY:-masterKey}
-    volumes:
-      - ./src/backend:/app
-      - model_cache:/root/.cache
+      CORS_ORIGINS: https://med.qm1.ch
     depends_on:
       db:
         condition: service_healthy
       meilisearch:
         condition: service_started
 
+  # ── React Frontend (NGINX in production) ───────────────────────────────────
   frontend:
     build:
       context: ./src/frontend
       dockerfile: ../../docker/frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
     restart: unless-stopped
     ports:
-      - "5173:5173"
-    volumes:
-      - ./src/frontend:/app
-      - frontend_modules:/app/node_modules
+      - "80:80"
     depends_on:
       - backend
 
+  # ── Meilisearch ────────────────────────────────────────────────────────────
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    restart: unless-stopped
+    # No "ports:" here — only accessible within Docker network.
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_KEY:-masterKey}
+      MEILI_ENV: production
+    volumes:
+      - meili_data:/meili_data
+
+  # ── One-off importers (run manually with --profile import) ─────────────────
   importer:
     build:
       context: ./src/backend
@@ -98,19 +119,7 @@ services:
     profiles:
       - import
 
-  meilisearch:
-    image: getmeili/meilisearch:v1.7
-    restart: unless-stopped
-    ports:
-      - "7700:7700"
-    environment:
-      MEILI_MASTER_KEY: ${MEILI_KEY:-masterKey}
-      MEILI_ENV: development
-    volumes:
-      - meili_data:/meili_data
-
 volumes:
   db_data:
   model_cache:
-  frontend_modules:
   meili_data:

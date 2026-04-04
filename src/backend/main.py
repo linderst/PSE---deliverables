@@ -30,10 +30,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Medcode API", lifespan=lifespan)
 
-# Setup CORS so the frontend can communicate with the backend
+# CORS: configurable via env var.
+# Production: CORS_ORIGINS=https://med.qm1.ch (set in docker-compose.yml)
+# Development: CORS_ORIGINS=* (set in docker-compose.override.yml)
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, this should be restricted
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
