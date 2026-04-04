@@ -1,0 +1,53 @@
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║  docker-compose.override.yml — DEVELOPMENT overrides                        ║
+# ║                                                                              ║
+# ║  Docker Compose automatically loads this file when running:                  ║
+# ║    docker compose up                                                         ║
+# ║                                                                              ║
+# ║  It restores the dev experience: public ports, hot-reload, source volumes.   ║
+# ║  On the server, this file is NOT present, so only the production             ║
+# ║  docker-compose.yml is used.                                                 ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+
+services:
+  # Expose DB port for local tools (pgAdmin, psql, etc.)
+  db:
+    ports:
+      - "5432:5432"
+
+  # Dev backend: hot-reload, public port, source volume
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: ../../docker/backend/Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      CORS_ORIGINS: "*"
+    volumes:
+      - ./src/backend:/app
+      - model_cache:/root/.cache
+
+  # Dev frontend: Vite dev server instead of NGINX
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: ../../docker/frontend/Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api
+    volumes:
+      - ./src/frontend:/app
+      - frontend_modules:/app/node_modules
+
+  # Expose Meilisearch for debugging
+  meilisearch:
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_ENV: development
+
+volumes:
+  model_cache:
+  frontend_modules:
