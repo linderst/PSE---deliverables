@@ -33,7 +33,7 @@
 ## Traktanden
 
 | Nr. | Traktandum | Wer
-|---|---|
+|---|---|---| 
 | 1 | Begrüssung | Felix |
 | 2 | Demo Iteration 3 (Deployment med.qm1.ch) | Stefan / Alex |
 | 3 | Besprechung Demo & Kundenfeedback | Julien |
