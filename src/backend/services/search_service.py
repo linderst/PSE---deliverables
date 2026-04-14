@@ -7,6 +7,7 @@
 # Standard library
 import os
 import re
+import time
 
 # Internal
 from models import SearchResponse, SearchResult
@@ -14,31 +15,105 @@ from medical_synonyms import expand_query
 from services.db_service import DatabaseService
 from services.chat_service import ChatService
 
+from concurrent.futures import ThreadPoolExecutor
+
 class SearchService:
     """
     SearchService coordinates queries between direct code matching,
     Meilisearch typo-tolerant searching, and pgvector semantic searching.
     """
-    def __init__(self, db_service: DatabaseService, chat_service: ChatService, genai_client, meili_index):
+    def __init__(self, db_service, chat_service, genai_client, meili_index, use_parallel: bool = False):
         self.db = db_service
         self.chat_service = chat_service
         self.genai_client = genai_client
         self.meili_index = meili_index
+        self.use_parallel = use_parallel
 
     def _get_gemini_embedding(self, text: str) -> list[float]:
-        """Generate embedding using Google Gemini API instead of local model."""
         if not self.genai_client:
             return []
-        try:
-            resp = self.genai_client.models.embed_content(
-                model="gemini-embedding-001",
-                contents=text,
-                config={"task_type": "RETRIEVAL_QUERY"}
+
+        for attempt in range(3):  # 3 Versuche
+            try:
+                resp = self.genai_client.models.embed_content(
+                    model="gemini-embedding-001",
+                    contents=text,
+                    config={"task_type": "RETRIEVAL_QUERY"}
+                )
+                return resp.embeddings[0].values
+
+            except Exception as e:
+                print(f"[embedding-error] attempt {attempt+1}: {e}")
+                time.sleep(0.5 * (attempt + 1))  # backoff
+        return []
+
+    def perform_search(self, q: str, limit: int = 5) -> SearchResponse:
+        if self.use_parallel:
+            return self._perform_parallel_search(q, limit)
+        else:
+            return self._perform_serial_search(q, limit)
+        
+    def _perform_parallel_search(self, q: str, limit: int = 5) -> SearchResponse:
+        q = q.strip()
+        if not q:
+            return SearchResponse(results=[])
+
+        # ── 1. Direct match bleibt gleich ─────────────────
+        icd_pattern = re.compile(r'^[A-Z]\d{2}(\.\d+)?$', re.IGNORECASE)
+        if icd_pattern.match(q):
+            three_digit = q[:3].upper()
+            row = self.db.get_icd_code_direct(three_digit)
+            if row:
+                return SearchResponse(results=[
+                    SearchResult(code=row[0], title=row[1], score=1.0)
+                ])
+
+        # ── 2. PARALLEL SEARCH ────────────────────────────
+        with ThreadPoolExecutor() as executor:
+            meili_future = executor.submit(self._run_meili_search, q, limit)
+            vector_future = executor.submit(self._run_vector_search, q, limit)
+
+            meili_results = meili_future.result()
+            vector_results = vector_future.result()
+
+        # ── 3. MERGE ──────────────────────────────────────
+        merged = self._merge_results(meili_results, vector_results, limit)
+
+        print(f"[hybrid] '{q}' → {[r.code for r in merged]}")
+
+        return SearchResponse(results=merged)
+    
+    def _merge_results(self, meili_results, vector_results, limit):
+        combined = {}
+
+        alpha = 0.6
+        beta = 0.4
+
+        for r in meili_results:
+            combined[r.code] = {
+                "title": r.title,
+                "score": alpha * r.score
+            }
+
+        for r in vector_results:
+            if r.code in combined:
+                combined[r.code]["score"] += beta * r.score
+            else:
+                combined[r.code] = {
+                    "title": r.title,
+                    "score": beta * r.score
+                }
+
+        results = [
+            SearchResult(
+                code=code,
+                title=data["title"],
+                score=round(data["score"], 3)
             )
-            return resp.embeddings[0].values
-        except Exception as e:
-            print(f"Error generating embedding: {e}")
-            return []
+            for code, data in combined.items()
+        ]
+
+        return sorted(results, key=lambda x: x.score, reverse=True)[:limit]
 
     def _run_vector_search(self, q_text: str, limit: int) -> list[SearchResult]:
         """
@@ -65,7 +140,45 @@ class SearchService:
         out.sort(key=lambda x: x.score, reverse=True)
         return out
 
-    def perform_search(self, q: str, limit: int = 5) -> SearchResponse:
+
+    def _run_meili_search(self, q: str, limit: int) -> list[SearchResult]:
+        if self.meili_index is None:
+            return []
+
+        try:
+            search_result = self.meili_index.search(q, {
+                "limit": limit * 5,
+                "attributesToRetrieve": ["code", "title"],
+                "showRankingScore": True
+            })
+
+            hits = search_result.get("hits", [])
+            if not hits:
+                return []
+
+            seen = {}
+            for hit in hits:
+                code_full = hit["code"]
+                code3 = code_full[:3]
+                raw_score = hit.get("_rankingScore", 0.5)
+
+                is_parent_code = len(code_full) == 3
+                effective_score = raw_score if is_parent_code else raw_score * 0.85
+
+                if code3 not in seen or effective_score > seen[code3].score:
+                    seen[code3] = SearchResult(
+                        code=code3,
+                        title=hit.get("title") or "Unbekannte Diagnose",
+                        score=round(effective_score, 3)
+                    )
+
+            return sorted(seen.values(), key=lambda r: r.score, reverse=True)[:limit]
+
+        except Exception as e:
+            print(f"[meili] error: {e}")
+            return []
+
+    def _perform_serial_search(self, q: str, limit: int = 5) -> SearchResponse:
         """
         Hybrid search:
         1. Direct ICD code recognition (e.g. 'R51' → score 1.0)
@@ -87,54 +200,12 @@ class SearchService:
                 ])
 
         # ── 2. Try Meilisearch ───────────────────────────────────────────────────
-        if self.meili_index is not None:
-            try:
-                search_result = self.meili_index.search(q, {
-                    "limit": limit * 5,   # fetch more candidates to account for deduplication
-                    "attributesToRetrieve": ["code", "title"],
-                    "showRankingScore": True
-                })
-                hits = search_result.get("hits", [])
-                if hits:
-                    seen = {}
-                    for hit in hits:
-                        code_full = hit["code"]
-                        code3 = code_full[:3]
-                        raw_score = hit.get("_rankingScore", 0.5)
-
-                        # Subcodes (e.g. O24.1) are penalised by 15% so that the
-                        # 3-digit parent code wins when both appear in results.
-                        # Without this, O24.1 "Diabetes Typ 2 in der Schwangerschaft"
-                        # would beat E11 "Diabetes mellitus Typ 2" for the query
-                        # "diabetes typ 2" because it contains more matching words.
-                        is_parent_code = len(code_full) == 3
-                        effective_score = raw_score if is_parent_code else raw_score * 0.85
-
-                        # Keep the best effective score per 3-digit group
-                        if code3 not in seen or effective_score > seen[code3].score:
-                            seen[code3] = SearchResult(
-                                code=code3,
-                                title=hit.get("title") or "Unbekannte Diagnose",
-                                score=round(effective_score, 3)
-                            )
-
-                    # Sort by effective score (best first) and apply limit
-                    sorted_results = sorted(seen.values(), key=lambda r: r.score, reverse=True)[:limit]
-
-                    if sorted_results:
-                        best_match = sorted_results[0]
-                        if best_match.score >= 0.75:
-                            print(f"[meili] '{q}' → {[r.code for r in sorted_results]}")
-                            filtered_results = [r for r in sorted_results if r.score >= 0.75]
-                            return SearchResponse(results=filtered_results)
-                        else:
-                            print(f"[meili] Top score {best_match.score} < 0.75, falling back to pgvector")
-            except Exception as e:
-                print(f"[meili] Error, falling back to vector search: {e}")
+        self._run_meili_search(q, limit)
 
         # ── 3. pgvector fallback ─────────────────────────────────────────────────
         results = self._run_vector_search(q, limit)
         return SearchResponse(results=results)
+    
 
     def perform_refined_search(self, q: str, limit: int = 5) -> SearchResponse:
         """
