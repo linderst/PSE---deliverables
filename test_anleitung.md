@@ -77,3 +77,22 @@ Wenn du das Projekt nicht mehr benötigst und stoppen möchtest, führe im Proje
 ```bash
 docker compose down
 ```
+
+
+### Löschen
+
+Um den Docker komplett zu löschen oder neu aufzusetzen:
+
+``` bash
+docker compose down -v # alles stoppen und löschen (auch Volumes)
+docker system prune -a # images löschen
+```
+
+Danach wieder Anfang der Anleitung.
+
+
+### live Änderungen
+
+``` bash
+docker compose restart
+```
