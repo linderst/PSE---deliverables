@@ -26,14 +26,22 @@ class ChatService:
         """
         if not self.genai_client:
             return "Gemini API key is missing. Cannot generate response."
-        try:
-            response = self.genai_client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt
-            )
-            return response.text
-        except Exception as e:
-            return f"Error calling Gemini API: {e}"
+        import time
+        max_retries = 3
+
+        for attempt in range(max_retries):
+            try:
+                response = self.genai_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt
+                )
+                return response.text
+            except Exception as e:
+                print(f"Error calling Gemini API (Attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # Warte 2 Sekunden vor dem nächsten Versuch
+                else:
+                    return "Entschuldigung, die KI-Server sind aktuell überlastet. Bitte versuche es später erneut."
 
     def handle_cached_chat(self, req: ChatRequest, prompt_type: str, prompt_template: str, disclaimer: bool = False) -> ChatResponse:
         """

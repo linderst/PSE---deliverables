@@ -29,16 +29,23 @@ class SearchService:
         """Generate embedding using Google Gemini API instead of local model."""
         if not self.genai_client:
             return []
-        try:
-            resp = self.genai_client.models.embed_content(
-                model="gemini-embedding-001",
-                contents=text,
-                config={"task_type": "RETRIEVAL_QUERY"}
-            )
-            return resp.embeddings[0].values
-        except Exception as e:
-            print(f"Error generating embedding: {e}")
-            return []
+        import time
+        max_retries = 3
+
+        for attempt in range(max_retries):
+            try:
+                resp = self.genai_client.models.embed_content(
+                    model="gemini-embedding-001",
+                    contents=text,
+                    config={"task_type": "RETRIEVAL_QUERY"}
+                )
+                return resp.embeddings[0].values
+            except Exception as e:
+                print(f"Error generating embedding (Attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                else:
+                    return []
 
     def _run_vector_search(self, q_text: str, limit: int) -> list[SearchResult]:
         """
@@ -155,7 +162,7 @@ class SearchService:
             )
             gemini_response = self.chat_service.ask_gemini(prompt)
 
-            if gemini_response.startswith("Error") or not gemini_response.strip() or gemini_response.startswith("Gemini API key"):
+            if gemini_response.startswith("Error") or not gemini_response.strip() or gemini_response.startswith("Gemini API key") or gemini_response.startswith("Entschuldigung"):
                 results = self._run_vector_search(q, limit)
                 return SearchResponse(results=results[:limit])
 
