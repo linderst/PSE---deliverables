@@ -140,8 +140,8 @@ classDiagram
         +List~SubcodeResult~ subcodes
     }
 
-    SearchResponse o-- SearchResult : "results[]"
-    SubcodeResponse o-- SubcodeResult : "subcodes[]"
+    SearchResponse o-- SearchResult : results array
+    SubcodeResponse o-- SubcodeResult : subcodes array
 
     %% ═══════════════════════════════════════════════════
     %% Services (Business Logic Layer)
@@ -184,12 +184,12 @@ classDiagram
         +perform_refined_search(q: str, limit: int) SearchResponse
     }
 
-    ChatService --> DatabaseService : "db_service"
-    SearchService --> DatabaseService : "db"
-    SearchService --> ChatService : "chat_service"
-    SearchService ..> SearchResult : "erzeugt"
-    SearchService ..> SearchResponse : "erzeugt"
-    ChatService ..> ChatResponse : "erzeugt"
+    ChatService --> DatabaseService : db_service
+    SearchService --> DatabaseService : db
+    SearchService --> ChatService : chat_service
+    SearchService ..> SearchResult : erzeugt
+    SearchService ..> SearchResponse : erzeugt
+    ChatService ..> ChatResponse : erzeugt
 
     %% ═══════════════════════════════════════════════════
     %% Routers (API Layer)
@@ -220,16 +220,16 @@ classDiagram
         +GET /sitemap.xml() Response
     }
 
-    SearchRouter --> SearchService : "Depends()"
-    ChatRouter --> ChatService : "Depends()"
-    SubcodesRouter --> DatabaseService : "Depends()"
-    SeoCacheRouter --> DatabaseService : "Depends()"
+    SearchRouter --> SearchService : Depends
+    ChatRouter --> ChatService : Depends
+    SubcodesRouter --> DatabaseService : Depends
+    SeoCacheRouter --> DatabaseService : Depends
 
-    SearchRouter ..> SearchResponse : "returns"
-    ChatRouter ..> ChatRequest : "receives"
-    ChatRouter ..> ContextualChatRequest : "receives"
-    ChatRouter ..> ChatResponse : "returns"
-    SubcodesRouter ..> SubcodeResponse : "returns"
+    SearchRouter ..> SearchResponse : returns
+    ChatRouter ..> ChatRequest : receives
+    ChatRouter ..> ContextualChatRequest : receives
+    ChatRouter ..> ChatResponse : returns
+    SubcodesRouter ..> SubcodeResponse : returns
 
     %% ═══════════════════════════════════════════════════
     %% FastAPI Application & Config
@@ -272,15 +272,15 @@ classDiagram
         +expand_query(q: str) str
     }
 
-    FastAPIApp --> SearchRouter : "include_router"
-    FastAPIApp --> ChatRouter : "include_router"
-    FastAPIApp --> SubcodesRouter : "include_router"
-    FastAPIApp --> SeoCacheRouter : "include_router"
-    Dependencies --> Config : "importiert Clients"
-    Dependencies --> DatabaseService : "erzeugt Singleton"
-    Dependencies --> ChatService : "erzeugt Singleton"
-    Dependencies --> SearchService : "erzeugt Singleton"
-    SearchService --> MedicalSynonyms : "expand_query()"
+    FastAPIApp --> SearchRouter : include_router
+    FastAPIApp --> ChatRouter : include_router
+    FastAPIApp --> SubcodesRouter : include_router
+    FastAPIApp --> SeoCacheRouter : include_router
+    Dependencies --> Config : importiert Clients
+    Dependencies --> DatabaseService : erzeugt Singleton
+    Dependencies --> ChatService : erzeugt Singleton
+    Dependencies --> SearchService : erzeugt Singleton
+    SearchService --> MedicalSynonyms : expand_query
 ```
 
 ---
@@ -659,8 +659,8 @@ classDiagram
         Zeigt: Animierte "..."
     }
 
-    App --> Home : "Route /"
-    App --> Results : "Route /search, /:slug/:code"
+    App --> Home : Route /
+    App --> Results : Route /search und /[slug]/[code]
     Home --> HeroView : renders
     HeroView --> AlphabetIndex : renders
     Results --> TopBar : renders
@@ -746,7 +746,7 @@ classDiagram
         +string|null error
     }
 
-    useChatBlocks ..> BlockState : "pro Block"
+    useChatBlocks ..> BlockState : pro Block
 ```
 
 ### 10.1 `useSearch` — Zweiphasen-Suchlogik
