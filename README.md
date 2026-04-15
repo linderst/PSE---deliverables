@@ -1,5 +1,13 @@
 # Medcode — ICD-10 Diagnosensuche & AI Prompt Engineer
 
+![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-pgvector-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Meilisearch](https://img.shields.io/badge/Meilisearch-1.7-FF5757?style=flat&logo=meilisearch&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/Gemini-2.5_Flash-8E75B2?style=flat&logo=googlegemini&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)
+
 > **Stand:** April 2026
 
 Medcode ist eine moderne, KI-gestützte Plattform zur Suche und verständlichen Erklärung medizinischer Diagnosen. Patientinnen und Patienten können ICD-10-Codes oder umgangssprachliche Symptome eingeben und erhalten extrem schnell präzise, laienverständliche Erklärungen, Facharzt-Empfehlungen und generelle Behandlungshinweise. 
