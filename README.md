@@ -1,139 +1,140 @@
-# Medcode — ICD-10 Diagnosensuche
-## Stand (30.03.2026)
-Medcode ist eine KI-gestützte Plattform zur Suche und verständlichen Erklärung medizinischer Diagnosen. Patientinnen und Patienten können ICD-10-Codes oder Freitext-Symptome eingeben und erhalten laienverständliche Erklärungen, Facharzt-Empfehlungen und Behandlungshinweise.
+# Medcode — ICD-10 Diagnosensuche & AI Prompt Engineer
 
-## Benutzung (Beispiel)
+> **Stand:** April 2026
+
+Medcode ist eine moderne, KI-gestützte Plattform zur Suche und verständlichen Erklärung medizinischer Diagnosen. Patientinnen und Patienten können ICD-10-Codes oder umgangssprachliche Symptome eingeben und erhalten extrem schnell präzise, laienverständliche Erklärungen, Facharzt-Empfehlungen und generelle Behandlungshinweise. 
+
+Das System basiert auf einer fortschrittlichen **Retrieval-Augmented Generation (RAG)** Architektur, um sogenannte "KI-Halluzinationen" im medizinischen Bereich strikt zu vermeiden.
+
 ---
 
-## Technologie-Stack
+## ✨ Kern-Features
+
+- **Zweiphasige Hybridsuche:** Kombiniert blitzschnelle, typotolerante Volltextsuche (Meilisearch) mit semantischer Vektorsuche (pgvector) und einer Gemini-basierten Query-Verfeinerung für hochkomplexe Symptombeschreibungen.
+- **Umgangssprachen-Mapping:** Übersetzt Alltagsbegriffe (z.B. "Herzrasen" oder "Bluthochdruck") automatisch in den korrekten medizinischen Fachjargon, noch bevor gesucht wird.
+- **AI-Caching System:** Die Erklärungen für die häufigsten Krankheiten werden in einer eigenen Cache-Tabelle vorgehalten — das eliminiert LLM-Latenzen (0 ms statt 3-5s) und minimiert API-Kosten auf null für Standard-Diagnosen.
+- **Kontextueller Chat:** Das System bietet pro Diagnose einen dedizierten Chatbot für Folgefragen an (`"Ist das ansteckend?"`, `"Darf ich Sport machen?"`), der stets im Kontext der jeweiligen Krankheit antwortet.
+- **SEO & Sichtbarkeit:** Vollständige SEO-Struktur mit dynamischer `sitemap.xml`, statischen A-Z-Indizes auf der Startseite und suchmaschinenoptimierten, sprechenden URLs (z.B. `/diabetes-mellitus-typ-2/E11`).
+
+---
+
+## 🛠️ Technologie-Stack
 
 | Komponente | Technologie | Version |
 |-----------|------------|---------|
-| Frontend | React + Vite | 19.2 / 7.3.1 |
-| Backend | Python + FastAPI | 3.11 |
-| Datenbank | PostgreSQL + pgvector | 16 |
-| Volltextsuche | Meilisearch | 1.7 |
-| KI-Modell | Google Gemini 2.5 Flash | — |
-| Embeddings | gemini-embedding-001 (3072 Dim.) | — |
-| Containerisierung | Docker Compose | — |
-| Datenquelle | BfArM ICD-10-GM 2026 (XML) | — |
+| **Frontend** | React + Vite | 19.2 / 7.3.1 |
+| **Backend API** | Python + FastAPI | 3.11 |
+| **Datenbank / Cache** | PostgreSQL + pgvector | 16 |
+| **Volltextsuche** | Meilisearch | 1.7 |
+| **KI-Modell (LLM)** | Google Gemini 2.5 Flash | — |
+| **Embedding-Modell** | gemini-embedding-001 (3072 Dim.) | — |
+| **Containerisierung** | Docker Compose | — |
+| **Datenquelle** | BfArM ICD-10-GM 2026 (XML) | — |
 
 ---
 
-## Schnellstart
+## 🚀 Schnellstart
 
 ### Voraussetzungen
-
 - **Docker + Docker Compose** (Version 2.0+)
-- **Google Gemini API-Key** 
+- **Google Gemini API-Key** (kostenlos unter Google AI Studio erhältlich)
 
-### 1. Umgebungsvariablen einrichten
-
+### 1. Konfiguration einrichten
+Kopiere die Beispiel-Konfiguration:
 ```bash
 cp .env.example .env
 ```
-
-Öffne `.env` und tragen deinen Gemini API-Key ein:
+Öffne die `.env`-Datei und trage deinen gültigen Gemini API-Key ein:
+```env
+GEMINI_API_KEY=dein_api_key_hier
 ```
-GEMINI_API_KEY=ihr_api_key_hier
-```
 
-### 2. Daten importieren (einmalig, ca. 30 Minuten)
-
+### 2. Daten importieren (Einmalig)
+Der Import lädt den ICD-Katalog herunter, generiert Vektor-Embeddings und indiziert Meilisearch. *Dieser Vorgang dauert aufgrund der Embedding-Generierung initial ca. 20-30 Minuten.*
 ```bash
 # Importer-Images bauen
 docker compose --profile import build
 
-# ICD-10 Daten + Gemini-Embeddings generieren
+# ICD-10 Daten (PostgreSQL) + Gemini-Embeddings generieren
 docker compose --profile import run --rm importer
 
-# Meilisearch-Index befuellen
+# Meilisearch-Index aufbauen
 docker compose --profile import run --rm meili-importer
 ```
 
-### 3. Anwendung starten
-
+### 3. Applikation starten
+Nach erfolgreichem Import kann das Gesamtsystem hochgefahren werden:
 ```bash
 docker compose up -d --build
 ```
 
-Die Anwendung ist nun erreichbar:
-- **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:8000
-- **Meilisearch:** http://localhost:7700
+**Verfügbare Dienste:**
+- 🌐 **Frontend (Benutzeroberfläche):** http://localhost:5173
+- ⚙️ **Backend (API):** http://localhost:8000
+- 🔍 **Meilisearch Dashboard:** http://localhost:7700
 
-### 4. Anwendung stoppen
-
-```bash
-docker compose down
-```
+Zum Stoppen der Container: `docker compose down`
 
 ---
 
-## Architektur
+## 🧠 Architektur & Routing
 
-Das System implementiert eine **RAG-Architektur** (Retrieval-Augmented Generation) mit einem 4-stufigen Suchalgorithmus:
+Das System verarbeitet Benutzeranfragen in einer performanten, mehrstufigen Pipeline. Keine Geschäftslogik befindet sich in den FastAPI-Routern — alles ist sauber in Singleton-Services gekapselt.
 
-1. **Direct Match** — Regex erkennt ICD-10-Code-Muster (z.B. I10) -> Sofort-Treffer in 1ms
-2. **Meilisearch** — Fehlertolerante Volltextsuche für bekannte Begriffe
-3. **pgvector** — Semantische Vektorsuche (Cosinus-Ähnlichkeit, 3072 Dimensionen)
-4. **Gemini Fallback** — Bei Konfidenz < 75%: LLM extrahiert Fachbegriffe, erneute Suche
+1. **Direct Match** (`DatabaseService`) — Ein regulärer Ausdruck erkennt ICD-10-Code-Muster (z.B. "I10"). Sofort-Treffer in < 1ms.
+2. **Meilisearch** (`SearchService`) — Fehlertolerante Volltextsuche, gekoppelt mit einem Subcode-Penalty, um Parent-Kategorien korrekt zu priorisieren.
+3. **pgvector Fallback** (`DatabaseService`) — Semantische Vektorsuche für abweichende Formulierungen mittels Cosinus-Ähnlichkeit.
+4. **Gemini Fallback / Refinement** (`SearchService`/`ChatService`) — Liefert die erste schnelle Suche keine starke Übereinstimmung (Konfidenz < 75%), extrahiert ein LLM asynchron Fachbegriffe aus dem Symptom und sucht erneut.
 
-Drei parallele KI-Endpunkte generieren unabhängig voneinander Erklärungen:
-- `/api/chat/explain` — "Was ist das?"
-- `/api/chat/specialist` — "Wer behandelt das?"
-- `/api/chat/guidance` — "Wie wird behandelt?"
-
-Detaillierte Architektur-Dokumentation:
-- [Architektur & Funktionsweise](docs/architektur_und_funktion.md)
-- [Frontend Design-Dokumentation](docs/design/frontend_design.md)
+Informationen werden primär aus dem AI-Cache bedient und mit SEO-freundlichen URLs (`/:slug/:code`) im Frontend präsentiert.
 
 ---
 
-## API-Endpunkte
+## 📑 Dokumentation
+
+| Dokument | Beschreibung |
+|---------|-------------|
+| 📐 **[Klassendiagramm & Funktionsweise](docs/klassendiagramm_und_funktionsweise.md)** | **Hauptrereferenz:** Umfassendes Systemdesign, Mermaid-Klassendiagramme, Flowcharts, API-Abläufe und Modul-Erklärungen. | 
+| 🎨 **[Frontend Design](docs/design/frontend_design.md)** | UI-Komponentendiagramm, Design Patterns und React State-Management. |
+| 📖 **[Benutzerhandbuch](docs/benutzerhandbuch.md)** | Bedienungs- und technische Installationsanleitung der Applikation. |
+| 🕰️ **[Ältere Architektur](docs/architektur_und_funktion.md)** | Ursprünglicher Entwurf der RAG-Pipeline und Docker-Infrastruktur. |
+| 📝 **[Protokolle](docs/protocols/)** | Sitzungsprotokolle (Kunden- und Team-Meetings). |
+| 📊 **[Deliverables](docs/deliverables/)** | Risikoanalysen, Testkonzepte und Statusberichte. |
+
+---
+
+## 🔌 API-Endpunkte
 
 | Methode | Endpoint | Beschreibung |
 |---------|---------|-------------|
-| GET | `/api/search?q=...&limit=5` | Hybridsuche (Meili + pgvector) |
-| GET | `/api/search/refined?q=...&limit=5` | KI-verfeinerte Suche (Gemini) |
-| GET | `/api/subcodes?code=...` | ICD-10 Unterkategorien |
-| GET | `/api/cached-conditions` | Vorgeseedete Diagnosen für A-Z Index |
-| POST | `/api/chat/explain` | KI-Erklärung der Diagnose |
-| POST | `/api/chat/specialist` | Facharzt-Empfehlung |
-| POST | `/api/chat/guidance` | Behandlungshinweise |
-| POST | `/api/chat/contextual` | Kontextuelle Folgefragen |
-| GET | `/api/sitemap.xml` | SEO-Sitemap |
+| `GET` | `/api/search?q=...&limit=5` | Initiale Hybridsuche (Direct + Meili + pgvector) |
+| `GET` | `/api/search/refined?q=...` | KI-verfeinerte Symptomsuche (Gemini Extrahierung) |
+| `GET` | `/api/subcodes?code=...` | Lädt hierarchisch alle ICD-10 Unterkategorien |
+| `GET` | `/api/cached-conditions` | Holt vorgeseedete Krankheiten für den SEO A-Z Index |
+| `POST` | `/api/chat/explain` | KI-Erklärung der Diagnose (Laienverständlich) |
+| `POST` | `/api/chat/specialist` | Welcher Facharzt ist hierfür zuständig? |
+| `POST` | `/api/chat/guidance` | Gängige Behandlungshinweise |
+| `POST` | `/api/chat/contextual` | Individueller Kontext-Chat (Folgefragen-Dialog) |
+| `GET` | `/sitemap.xml` | Dynamisch generierte SEO-Sitemap |
 
 ---
 
-## Dokumentation
-//TODO Backend kommt hier noch rein
-| Dokument | Beschreibung |
-|---------|-------------|
-| [Frontend Design-Dokumentation](docs/design/frontend_design.md) | Komponentendiagramm, Sequenzdiagramme, State-Management, Design Patterns |
-| [Backend Design-Dokumentation]() | - |
-| [Benutzerhandbuch](docs/benutzerhandbuch.md) | Bedienungsanleitung + Installationsanleitung |
-| [Architektur & Funktionsweise](docs/architektur_und_funktion.md) | RAG-Pipeline, Docker-Infrastruktur, Datenfluss |
-| [Protokolle](docs/protocols/) | Sitzungsprotokolle (Kunden- und Team-Meetings) |
-| [Deliverables](docs/deliverables/) | Statusberichte und Risikoanalysen |
+## 🐳 Docker Services
 
----
-
-## Docker Services
-
-| Service | Image | Port | Beschreibung | Profil |
+| Service | Basis-Image | Container-Port | Beschreibung | Profil |
 |---------|-------|------|-------------|--------|
-| `db` | pgvector/pgvector:pg16 | 5432 | PostgreSQL + Vektordatenbank | default |
-| `backend` | Custom (Python 3.11) | 8000 | FastAPI Server | default |
-| `frontend` | Custom (Node 20) | 5173 | React/Vite Dev-Server | default |
-| `meilisearch` | getmeili/meilisearch:v1.7 | 7700 | Volltextsuche | default |
-| `importer` | Custom (Python 3.11) | — | ICD-10 XML Import + Embedding-Generierung | import |
-| `meili-importer` | Custom (Python 3.11) | — | Meilisearch-Indexierung | import |
+| `db` | `pgvector/pgvector:pg16` | 5432 | Relationale PostgreSQL inkl. Vektordatenbank | default |
+| `meilisearch` | `getmeili/meilisearch:v1.7` | 7700 | In-Memory Volltext-Engine mit Typokorrektur | default |
+| `backend` | `python:3.11-slim` | 8000 | FastAPI Python Server | default |
+| `frontend` | `node:20` | 5173 | React/Vite Application | default |
+| `importer` | `python:3.11-slim` | — | Einmaliges ICD-10 Parsing & Gemini-Embedding | import |
+| `meili-importer` | `python:3.11-slim` | — | Einmaliges Meilisearch-Indexing der DB-Synonyme | import |
 
 ---
 
-## Team
+## 👥 Projekt-Team & Stakeholder
 
+**Projektteam:**
 | Name | Rolle |
 |------|-------|
 | Felix Buchmüller | Key Account Manager |
@@ -143,11 +144,8 @@ Detaillierte Architektur-Dokumentation:
 | Dennis Roduner | Sitzungsleitung & Protokollführung |
 | Julien Chopin | Sitzungsleitung & Protokollführung |
 
-### Arbeitsplan
+**Kunde (Medcode GmbH):**
+- **Stefan Vogt** — Geschäftsführer
+- **Simon Hölzer** — Leitender Arzt
 
-[Trello Board](https://trello.com/invite/b/699c50bc8934bc6d26e464a5/ATTI1d9d3acc8e273c0cf821f590b0f7a0626D898DDD/pse)
-
-### Kunde
-
-- **Stefan Vogt** — Geschäftsführer, Medcode GmbH
-- **Simon Hölzer** — Arzt, Medcode GmbH
+🔗 [Projekt Trello Board (Intern)](https://trello.com/invite/b/699c50bc8934bc6d26e464a5/ATTI1d9d3acc8e273c0cf821f590b0f7a0626D898DDD/pse)
