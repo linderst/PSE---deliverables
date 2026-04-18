@@ -23,7 +23,7 @@ const OtherMatches = ({ otherMatches, handleSelectCondition }) => {
         <div
           key={i}
           className={`other-match-chip tooltip-wrap${(m.score || 0) >= 0.95 ? ' other-match-chip--high' : ''}`}
-          onClick={() => handleSelectCondition(m.code, m.title, m.score)}
+          onClick={() => handleSelectCondition(m)}
         >
           {m.code}
           {(m.score || 0) >= 0.95 && <span className="chip-star">✓</span>}

@@ -34,7 +34,7 @@ const Results = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Custom hooks
-  const { currentCondition, otherMatches, searchLoading, searchRefined, searchError, longLoading, runSearch, selectCondition } = useSearch();
+  const { currentCondition, otherMatches, searchLoading, searchRefined, searchRefining, searchError, longLoading, runSearch, selectCondition } = useSearch();
   const { explain, specialist, guidance, disclaimer, fetchBlocks, resetBlocks } = useChatBlocks();
   const { dialogMessages, dialogInput, setDialogInput, dialogLoading, isChatOpen, setIsChatOpen, messagesEndRef, handleSendDialog, resetDialog } = useContextualChat(currentCondition);
   const { subcodes, subcodesOpen, setSubcodesOpen } = useSubcodes(currentCondition);
@@ -90,8 +90,9 @@ const Results = () => {
   };
 
   /** Select an alternative match from the chips list. */
-  const handleSelectCondition = (code, title, score) => {
-    selectCondition(code, title, score);
+  const handleSelectCondition = (condition) => {
+    const { code, title } = condition;
+    selectCondition(condition);
     resetDialog();
     fetchBlocks(code, title);
     navigate(`/${slugify(title)}/${code}`, { replace: false });
@@ -119,6 +120,7 @@ const Results = () => {
           searchError={searchError}
           longLoading={longLoading}
           searchRefined={searchRefined}
+          searchRefining={searchRefining}
         />
 
         <OtherMatches

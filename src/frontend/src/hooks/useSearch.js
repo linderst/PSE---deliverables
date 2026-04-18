@@ -28,6 +28,7 @@ export function useSearch() {
   const [otherMatches, setOtherMatches] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchRefined, setSearchRefined] = useState(false);
+  const [searchRefining, setSearchRefining] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [longLoading, setLongLoading] = useState(false);
 
@@ -57,6 +58,7 @@ export function useSearch() {
     setCurrentCondition(null);
     setOtherMatches([]);
     setSearchRefined(false);
+    setSearchRefining(false);
 
     try {
       const res = await fetch(`${API}/search?q=${encodeURIComponent(q)}&limit=5`);
@@ -79,6 +81,7 @@ export function useSearch() {
       }
 
       // Low confidence — try Gemini-enhanced refined search
+      setSearchRefining(true);
       try {
         const refinedRes = await fetch(`${API}/search/refined?q=${encodeURIComponent(q)}&limit=5`);
         const refinedData = await refinedRes.json();
@@ -89,11 +92,14 @@ export function useSearch() {
           setCurrentCondition(refinedTop);
           if (refined.length > 1) setOtherMatches(refined.slice(1));
           setSearchRefined(true);
+          setSearchRefining(false);
           setSearchLoading(false);
           return refinedTop;
         }
       } catch {
         // Gemini failed — silently fall through to original weak result
+      } finally {
+        setSearchRefining(false);
       }
 
       // Absolute fallback: use the original weak result
@@ -111,20 +117,19 @@ export function useSearch() {
 
   /**
    * Promotes an alternative match to the primary result.
-   * @param {string} code  - ICD-10 code
-   * @param {string} title - Diagnosis title
-   * @param {number} score - Confidence score
+   * @param {object} condition - Full ICD-10 condition object
    */
-  const selectCondition = (code, title, score) => {
+  const selectCondition = (condition) => {
+    const { code, title, score, version } = condition;
     setOtherMatches(prev => {
       const prevMain = currentCondition;
       const withoutClicked = prev.filter(m => m.code !== code);
       if (prevMain && prevMain.code !== code) {
-        return [{ code: prevMain.code, title: prevMain.title, score: prevMain.score }, ...withoutClicked];
+        return [prevMain, ...withoutClicked];
       }
       return withoutClicked;
     });
-    setCurrentCondition({ code, title, score });
+    setCurrentCondition(condition);
   };
 
   return {
@@ -132,6 +137,7 @@ export function useSearch() {
     otherMatches,
     searchLoading,
     searchRefined,
+    searchRefining,
     searchError,
     longLoading,
     runSearch,

@@ -59,7 +59,7 @@ const SubcodesPanel = ({ subcodes, subcodesOpen, setSubcodesOpen, handleSelectCo
                 <div
                   key={sub.code}
                   className="subcode-item"
-                  onClick={() => handleSelectCondition(sub.code, sub.title, 0.99)}
+                  onClick={() => handleSelectCondition({ code: sub.code, title: sub.title, score: 0.99, version: '2024' })}
                 >
                   <div className="subcode-item-left">
                     <span className="subcode-code">{sub.code}</span>

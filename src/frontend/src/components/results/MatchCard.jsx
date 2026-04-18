@@ -22,7 +22,8 @@ const MatchCard = ({
   currentCondition,
   searchError,
   longLoading,
-  searchRefined
+  searchRefined,
+  searchRefining
 }) => {
   return (
     <div className="match-card">
@@ -35,7 +36,10 @@ const MatchCard = ({
             {searchLoading ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div className="spinner" style={{ width: '20px', height: '20px', borderWidth: '3px' }}></div>
-                <span>KI-Diagnose läuft<LoadingDots /></span>
+                <span>
+                  {searchRefining ? 'KI-Diagnose läuft' : 'Suche läuft'}
+                  <LoadingDots />
+                </span>
               </div>
             ) : (
               currentCondition ? currentCondition.title : searchError

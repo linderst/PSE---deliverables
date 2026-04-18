@@ -79,7 +79,7 @@ class SearchService:
         2. Meilisearch (fast, typo-tolerant, synonym-aware) — PRIMARY
         3. pgvector fallback if Meilisearch is unavailable
         """
-        q = q.strip()
+        q = q.lower().strip()
         if not q:
             return SearchResponse(results=[])
 
@@ -149,18 +149,23 @@ class SearchService:
         1. Ask Gemini to extract 5 medical ICD-10 terms from the plain-language query
         2. Run vector search with those terms
         """
-        q = q.strip()
+        q = q.lower().strip()
         if not q:
             return SearchResponse(results=[])
 
         try:
             prompt = (
                 f"Du bist ein medizinischer Kodierassistent für ICD-10. "
-                f"Der Nutzer hat folgende Symptome oder Beschwerden beschrieben: \"{q}\"\n"
-                f"Gib mir genau 5 medizinische Fachbegriffe oder ICD-10-Diagnosen, die am besten passen. "
-                f"Antworte NUR mit den 5 Begriffen, durch Komma getrennt, ohne Erklärung. Auf Deutsch."
+                f"Extrahiere aus der Symptombeschreibung des Nutzers 5 passende medizinische Fachbegriffe oder ICD-10-Termini.\n\n"
+                f"Beispiele:\n"
+                f"Eingabe: \"Kopfschmerz mit Fieber\"\n"
+                f"Antwort: Influenza, Grippaler Infekt, COVID-19, Sinusitis, Rhinitis\n\n"
+                f"Eingabe: \"Rückenschmerzen\"\n"
+                f"Antwort: Dorsalgie, Lumbago, Spondylose, Bandscheibenbeschwerden, Myalgie\n\n"
+                f"Eingabe: \"{q}\"\n"
+                f"Antwort: "
             )
-            gemini_response = self.chat_service.ask_gemini(prompt)
+            gemini_response = self.chat_service.ask_gemini(prompt, temperature=0.0)
 
             if gemini_response.startswith("Error") or not gemini_response.strip() or gemini_response.startswith("Gemini API key") or gemini_response.startswith("Entschuldigung"):
                 results = self._run_vector_search(q, limit)
@@ -188,7 +193,7 @@ class SearchService:
                                 all_meili_hits[code3] = SearchResult(
                                     code=code3,
                                     title=hit.get("title") or "Unbekannte Diagnose",
-                                    score=score
+                                    score=min(score, 0.80)  # Cap refined results at 80% (lowered from 90%)
                                 )
                     except Exception as e:
                         print(f"[refined-meili] Error searching term '{term}': {e}")
@@ -202,6 +207,8 @@ class SearchService:
                         return SearchResponse(results=filtered_results[:limit])
 
             results = self._run_vector_search(expanded_query, limit)
+            for r in results:
+                r.score = min(r.score, 0.80)  # Cap refined results at 80%
             return SearchResponse(results=results[:limit])
 
         finally:

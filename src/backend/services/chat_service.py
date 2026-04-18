@@ -20,7 +20,7 @@ class ChatService:
         self.db_service = db_service
         self.genai_client = genai_client
 
-    def ask_gemini(self, prompt: str) -> str:
+    def ask_gemini(self, prompt: str, temperature: float = 0.0) -> str:
         """
         Returns LLM-generated (gemini) answer based on input string (prompt).
         """
@@ -32,8 +32,9 @@ class ChatService:
         for attempt in range(max_retries):
             try:
                 response = self.genai_client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt
+                    model='gemini-3-flash-preview',
+                    contents=prompt,
+                    config={'temperature': temperature}
                 )
                 return response.text
             except Exception as e:
