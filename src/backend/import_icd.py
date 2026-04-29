@@ -5,6 +5,7 @@ from lxml import etree
 from google import genai
 from tqdm import tqdm
 from dotenv import load_dotenv
+from sentence_transformers import SentenceTransformer
 
 # --------------------------------------------------
 # Load environment variables
@@ -26,8 +27,8 @@ DATA_DIR = os.getenv("DATA_DIR", ".")
 XML_FILE = os.path.join(DATA_DIR, "icd10gm2026syst_claml_20250912.xml")
 TXT_FILE = os.path.join(DATA_DIR, "icd10gm2026alpha_edvtxt_20250926.txt")
 
-EMBEDDING_MODEL = "gemini-embedding-001"
-EMBEDDING_DIM = 3072
+model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+EMBEDDING_DIM = 384
 
 
 # --------------------------------------------------
@@ -103,27 +104,9 @@ def create_tables():
 def generate_embeddings_batch(texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
-    
-    # Gemini allows max 100 items per request, but let's batch manually here
-    # to handle retries smoothly.
-    results = []
-    chunk_size = 100
-    for i in range(0, len(texts), chunk_size):
-        chunk = texts[i:i + chunk_size]
-        while True:
-            try:
-                resp = genai_client.models.embed_content(
-                    model=EMBEDDING_MODEL,
-                    contents=chunk,
-                    config={"task_type": "RETRIEVAL_DOCUMENT"}
-                )
-                chunk_results = [emb.values for emb in resp.embeddings]
-                results.extend(chunk_results)
-                break
-            except Exception as e:
-                print(f"Embedding API error: {e}. Retrying in 5s...")
-                time.sleep(5)
-    return results
+
+    embeddings = model.encode(texts)
+    return [emb.tolist() for emb in embeddings]
 
 
 # --------------------------------------------------
