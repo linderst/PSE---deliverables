@@ -33,7 +33,18 @@ class ChatService:
             )
             return response.text
         except Exception as e:
-            return f"Error calling Gemini API: {e}"
+            msg = str(e)
+
+            if "503" in msg:
+                return {
+                    "success": False,
+                    "message": "AI service is currently busy. Please retry in a moment."
+                }
+
+            return {
+                "success": False,
+                "message": "Temporary error. Please try again."
+        }
 
     def handle_cached_chat(self, req: ChatRequest, prompt_type: str, prompt_template: str, disclaimer: bool = False) -> ChatResponse:
         """
