@@ -15,6 +15,8 @@ from medical_synonyms import expand_query
 from services.db_service import DatabaseService
 from services.chat_service import ChatService
 
+# parallel search service
+from sentence_transformers import SentenceTransformer
 from concurrent.futures import ThreadPoolExecutor
 
 class SearchService:
@@ -28,26 +30,20 @@ class SearchService:
         self.genai_client = genai_client
         self.meili_index = meili_index
         self.use_parallel = use_parallel
+        self.embedding_model = SentenceTransformer(
+            "paraphrase-multilingual-MiniLM-L12-v2"
+        )
 
-    def _get_gemini_embedding(self, text: str) -> list[float]:
-        if not self.genai_client:
+    def _get_embedding(self, text: str) -> list[float]:
+        try:
+            embedding = self.embedding_model.encode(text)
+            return embedding.tolist()
+        except Exception as e:
+            print(f"[embedding-error] {e}")
             return []
 
-        for attempt in range(3):  # 3 Versuche
-            try:
-                resp = self.genai_client.models.embed_content(
-                    model="gemini-embedding-001",
-                    contents=text,
-                    config={"task_type": "RETRIEVAL_QUERY"}
-                )
-                return resp.embeddings[0].values
-
-            except Exception as e:
-                print(f"[embedding-error] attempt {attempt+1}: {e}")
-                time.sleep(0.5 * (attempt + 1))  # backoff
-        return []
-
     def perform_search(self, q: str, limit: int = 5) -> SearchResponse:
+        print(f"[SEARCH MODE] {'PARALLEL' if self.use_parallel else 'SERIAL'}")
         if self.use_parallel:
             return self._perform_parallel_search(q, limit)
         else:
@@ -120,7 +116,7 @@ class SearchService:
         Embeds a query and runs a combined-score vector search against ICD codes.
         """
         expanded = expand_query(q_text)
-        embedding = self._get_gemini_embedding(expanded)
+        embedding = self._get_embedding(expanded)
 
         if not embedding:
             return []
@@ -199,10 +195,8 @@ class SearchService:
                     SearchResult(code=row[0], title=row[1] or "Unbekannte Diagnose", score=1.0)
                 ])
 
-        # ── 2. Try Meilisearch ───────────────────────────────────────────────────
         self._run_meili_search(q, limit)
 
-        # ── 3. pgvector fallback ─────────────────────────────────────────────────
         results = self._run_vector_search(q, limit)
         return SearchResponse(results=results)
     
