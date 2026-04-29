@@ -24,10 +24,9 @@ class SearchService:
     SearchService coordinates queries between direct code matching,
     Meilisearch typo-tolerant searching, and pgvector semantic searching.
     """
-    def __init__(self, db_service, chat_service, genai_client, meili_index, use_parallel: bool = False):
+    def __init__(self, db_service, chat_service, meili_index, use_parallel: bool = False):
         self.db = db_service
         self.chat_service = chat_service
-        self.genai_client = genai_client
         self.meili_index = meili_index
         self.use_parallel = use_parallel
         self.embedding_model = SentenceTransformer(

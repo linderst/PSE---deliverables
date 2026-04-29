@@ -15,7 +15,6 @@ chat_service = ChatService(db_service=db_service, genai_client=genai_client)
 search_service = SearchService(
     db_service=db_service,
     chat_service=chat_service,
-    genai_client=genai_client,
     meili_index=meili_index,
     use_parallel=False # to delete
 )
