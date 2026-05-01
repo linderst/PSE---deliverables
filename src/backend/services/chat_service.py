@@ -44,7 +44,7 @@ class ChatService:
             return {
                 "success": False,
                 "message": "Temporary error. Please try again."
-        }
+            }
 
     def handle_cached_chat(self, req: ChatRequest, prompt_type: str, prompt_template: str, disclaimer: bool = False) -> ChatResponse:
         """

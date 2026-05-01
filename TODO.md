@@ -14,19 +14,5 @@ Gleichzeitiges testen zwischen den beiden Systemen
 Paralell und seriell.
 
 
-
-# changes
-* in dependecies.py 
-    use_parallel=False gibt an ob parallel search oder nicht -> bleibt nicht also wieder to delete
-
-* in dockerfile (backend)
-preload model into docker image
-
-* in requirements.txt
-Model : sentence-transformers
-
-* in database.sql
-icd_embedding tabel, dim von 3072 auf 384 für lokales modell
-
-* in import_icd.py
-genau gleiche
+## resultate
+Resultate momentan recht schlecht (schemantisch)
