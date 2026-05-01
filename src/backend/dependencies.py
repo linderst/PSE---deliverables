@@ -16,7 +16,8 @@ search_service = SearchService(
     db_service=db_service,
     chat_service=chat_service,
     meili_index=meili_index,
-    use_parallel=False # to delete
+    genai_client=genai_client,
+    use_parallel=True # to delete
 )
 
 def get_db_service() -> DatabaseService:
