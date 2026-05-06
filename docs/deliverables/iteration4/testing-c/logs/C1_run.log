@@ -1,0 +1,24 @@
+=== C1.1: E11.9 explain (zwei Aufrufe) ===
+[C1.1-1.Aufruf] endpoint=explain status=200 dauer_ms=3988.0 antwort_zeichen=552
+[C1.1-2.Aufruf] endpoint=explain status=200 dauer_ms=3808.9 antwort_zeichen=552
+
+=== C1.2: I10 explain ===
+[C1.2-1.Aufruf] endpoint=explain status=200 dauer_ms=3873.9 antwort_zeichen=473
+[C1.2-2.Aufruf] endpoint=explain status=200 dauer_ms=46.9 antwort_zeichen=473
+
+=== C1.3: J45 explain ===
+[C1.3-1.Aufruf] endpoint=explain status=200 dauer_ms=3166.5 antwort_zeichen=487
+[C1.3-2.Aufruf] endpoint=explain status=200 dauer_ms=50.8 antwort_zeichen=487
+
+=== C1.4: E11.9 specialist (anderer prompt_type) ===
+[C1.4-1.Aufruf] endpoint=specialist status=200 dauer_ms=3124.5 antwort_zeichen=326
+[C1.4-2.Aufruf] endpoint=specialist status=200 dauer_ms=2929.5 antwort_zeichen=326
+
+Fertig. Backend-Log mit 'Cache hit:' und '[cache-miss] saved' parallel pruefen.
+=== C1.5: E11 (3-stellig) explain ===
+[C1.5-1.Aufruf] endpoint=explain status=200 dauer_ms=6769.4 antwort_zeichen=539
+[C1.5-2.Aufruf] endpoint=explain status=200 dauer_ms=54.8 antwort_zeichen=539
+
+=== C1.6: E11 (3-stellig) specialist (anderer prompt_type als C1.5) ===
+[C1.6-1.Aufruf] endpoint=specialist status=200 dauer_ms=4911.7 antwort_zeichen=288
+[C1.6-2.Aufruf] endpoint=specialist status=200 dauer_ms=50.8 antwort_zeichen=288

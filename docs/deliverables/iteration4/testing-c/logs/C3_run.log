@@ -1,0 +1,99 @@
+=== C3.1: Frontend Root ===
+http_code=200 time_total=0.029275s size=1012
+root_div_count=1
+main_jsx_referenced=1
+
+=== C3.2: Suche E11.9 -> /api/search ===
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; raw=sys.stdin.read(); body,_,tail=raw.rpartition("\n[time"); d=json.loads(body); print("erstes_ergebnis:", d[0] if d else "leer"); print("[time"+tail)
+                                                                                                                                ~^^^
+KeyError: 0
+
+=== C3.3: Suche Zuckerkrankheit ===
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json,sys; raw=sys.stdin.read(); body,_,tail=raw.rpartition("\n[time"); d=json.loads(body); print("anzahl:", len(d)); [print("-",x.get("code"),x.get("title")[:60]) for x in d[:3]]; print("[time"+tail)
+                                                                                                                                                                                       ~^^^^
+KeyError: slice(None, 3, None)
+anzahl: 1
+
+=== C3.4: Symptomtext (refined) ===
+body_chars: 318
+anzahl: n/a
+[time_total=2.909908s http=200]
+
+
+=== C3.5: DialogPanel API-Backing (explain/specialist/guidance) ===
+answer_chars: 539  disclaimer: True
+[ep=explain time_total=0.009400s http=200]
+
+answer_chars: 288  disclaimer: False
+[ep=specialist time_total=0.002763s http=200]
+
+answer_chars: 656  disclaimer: False
+[ep=guidance time_total=2.834862s http=200]
+
+
+=== C3.6: Deep-Link-SPA-Reload ===
+http_code=200 time_total=0.017540s size=1012
+spa_root_present=1
+=== C3.2 (re-run, raw): /api/search?q=E11.9 ===
+{
+  "results": [
+    {
+      "code": "E11",
+      "title": "Diabetes mellitus, Typ 2",
+      "score": 1.0,
+      "version": "2024"
+    }
+  ]
+}
+
+=== C3.3 (re-run, raw): /api/search?q=Zuckerkrankheit ===
+{
+  "results": [
+    {
+      "code": "E10",
+      "title": "Diabetes mellitus, Typ 1",
+      "score": 0.992,
+      "version": "2024"
+    },
+    {
+      "code": "E11",
+      "title": "Diabetes mellitus, Typ 2",
+      "score": 0.992,
+      "version": "2024"
+    },
+    {
+      "code": "E12",
+      "title": "Diabetes mellitus in Verbindung mit Fehl- oder Mangelernährung [Malnutrition]",
+      "score": 0.992,
+      "version": "2024"
+    }
+  ]
+}
+
+=== C3.4 (re-run, raw): /api/search/refined?q=pulsierende+Kopfschmerzen ===
+{
+  "results": [
+    {
+      "code": "G43",
+      "title": "Migräne",
+      "score": 0.8,
+      "version": "2024"
+    },
+    {
+      "code": "G44",
+      "title": "Sonstige Kopfschmerzsyndrome",
+      "score": 0.8,
+      "version": "2024"
+    },
+    {
+      "code": "N94",
+      "title": "Schmerz und andere Zustände im Zusammenhang mit den weiblichen Genitalorganen und dem Menstruationszyklus",
+      "score": 0.8,
+      "version": "2024"
+    }
+  ]
+}
