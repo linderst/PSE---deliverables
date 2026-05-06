@@ -182,9 +182,7 @@ funktioniert gut genug.
 
 ## Bildschirmaufnahmen
 
-Die Aufnahmen liegen lokal in `C5_recordings/` und sind zusätzlich als nicht
-gelistete Videos auf YouTube hinterlegt, damit der Korrektor sie ohne Zugriff
-auf das lokale Verzeichnis ansehen kann.
+Die Aufnahmen liegen auf Youtube.
 
 | Person | Datei                        | YouTube-Link                       |
 |--------|------------------------------|------------------------------------|
@@ -194,7 +192,3 @@ auf das lokale Verzeichnis ansehen kann.
 | P2     | C5_recordings/P2.mov         | https://youtu.be/btdeTzq2CwM       |
 | P2     | C5_recordings/P2_part2.mov   | https://youtu.be/ueSgDQLEuZk       |
 | P2     | C5_recordings/P2_part3.mov   | https://youtu.be/oOcL5bi1xtw       |
-
-## Datenschutz
-
-Die Bildschirmaufnahmen legen wir in `C5_recordings/` ab und committen sie nicht ins Repository. Auf YouTube sind sie als "nicht gelistet" hochgeladen, das heisst sie sind nur über den direkten Link erreichbar und tauchen nicht in der Suche auf. In dieser Datei erfassen wir nur anonymisierte Antworten.
