@@ -1,7 +1,7 @@
 # Projektdokumentation: ICD-10 Prompt Engineer Backend & Frontend
 **Datum:** 20. März 2026 (aktualisiert: 30. März 2026)
 
-//TODO noch Backend einfügen
+
 > **Hinweis:** Für die aktuelle Design-Dokumentation siehe [Frontend Design-Dokumentation](docs/design/frontend_design.md) und das [Benutzerhandbuch](docs/benutzerhandbuch.md).
 
 Dieses Dokument bietet einen detaillierten, technischen Überblick über die Version 1.0 des KI-gestützten Diagnosesystems.
