@@ -51,7 +51,7 @@ const MatchCard = ({
             </div>
           )}
           <div className="match-meta">
-            {currentCondition && `ICD-10-GM ${currentCondition.version}`}
+            {currentCondition && `ICD-10`}
           </div>
           {searchRefined && (
             <div className="refined-badge">✦ KI-verfeinert</div>
