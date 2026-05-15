@@ -74,7 +74,7 @@ def get_sitemap(
         text = re.sub(r'(^-|-$)+', '', text)
         return text
 
-    base_url = "https://medcode.ch"
+    base_url = "https://med.qm1.ch/"
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
         
     xml_urls = []
