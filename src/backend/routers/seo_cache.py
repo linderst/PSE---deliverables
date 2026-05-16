@@ -4,7 +4,7 @@ routers/seo_cache.py
 Description: Defines all HTTP endpoints related to Search Engine Optimization (SEO) and Caching.
              Delegates all business logic to search_service.py.
 """
-# Standard library
+# Standard library  
 import os
 import re
 
@@ -74,7 +74,7 @@ def get_sitemap(
         text = re.sub(r'(^-|-$)+', '', text)
         return text
 
-    base_url = "https://med.qm1.ch/"
+    base_url = "https://med.qm1.ch"
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
         
     xml_urls = []
