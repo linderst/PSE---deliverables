@@ -103,8 +103,8 @@ Informationen werden primär aus dem AI-Cache bedient und mit SEO-freundlichen U
 | Dokument | Beschreibung |
 |---------|-------------|
 | 📐 **[Klassendiagramm & Funktionsweise](docs/klassendiagramm_und_funktionsweise.md)** | **Hauptrereferenz:** Umfassendes Systemdesign, Mermaid-Klassendiagramme, Flowcharts, API-Abläufe und Modul-Erklärungen. | 
-| 🎨 **[Frontend Design](docs/design/frontend_design.md)** | Backend- und Architekturdokumentation |
-| 🎨 **[Backend Design](docs/design/backend_design.md)** | UI-Komponentendiagramm, Design Patterns und React State-Management. |
+| 🎨 **[Frontend Design](docs/design/frontend_design.md)** | UI-Komponentendiagramm, Design Patterns und React State-Management. |
+| 🎨 **[Backend Design](docs/design/backend_design.md)** | Backend- und Architekturdokumentation |
 | 📖 **[Benutzerhandbuch](docs/benutzerhandbuch.md)** | Bedienungs- und technische Installationsanleitung der Applikation. |
 | 🕰️ **[Ältere Architektur](docs/architektur_und_funktion.md)** | Ursprünglicher Entwurf der RAG-Pipeline und Docker-Infrastruktur. |
 | 📝 **[Protokolle](docs/protocols/)** | Sitzungsprotokolle (Kunden- und Team-Meetings). |

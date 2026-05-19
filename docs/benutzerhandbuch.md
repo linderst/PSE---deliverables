@@ -20,7 +20,7 @@
 Beim Aufrufen der Anwendung erscheint die Startseite mit zwei Hauptelementen:
 
 <!-- Screenshot: Startseite -->
-![Screenshot](/screenshots/startseite.png)
+![Screenshot](/docs/screenshots/startseite.png)
 
 ### 3.1 Suchfeld
 
@@ -34,7 +34,7 @@ Das zentrale Suchfeld akzeptiert zwei Arten von Eingaben:
 Unterhalb des Suchfelds befindet sich ein alphabetischer Index mit vorbereiteten Diagnosen. Klicken Sie auf einen Buchstaben, um Diagnosen zu filtern, und wählen Sie eine Diagnose direkt aus.
 
 <!-- Screenshot: Krankheits-Index (A-Z) -->
-![Screenshot](/screenshots/krankheitsindex.png)
+![Screenshot](/docs/screenshots/krankheitsindex.png)
 
 ---
 
@@ -66,7 +66,7 @@ Bei Freitext-Eingaben (z.B. "starke Rückenschmerzen"):
 Nach einer erfolgreichen Suche wird die Ergebnis-Ansicht angezeigt:
 
 <!-- Screenshot: Vollständige Ergebnisseite -->
-![Screenshot](/screenshots/ergebnisansicht.png)
+![Screenshot](/docs/screenshots/ergebnisansicht.png)
 
 ### 5.1 Diagnose-Karte
 
@@ -77,7 +77,7 @@ Die prominente Hauptkarte zeigt:
 - **Treffsicherheit** als kreisförmiger Tachometer (0-100%)
 
 <!-- Screenshot: Diagnose-Karte mit Tachometer -->
-![Screenshot](/screenshots/tachometerdetail.png)
+![Screenshot](/docs/screenshots/tachometerdetail.png)
 
 Falls die KI das Ergebnis verbessert hat, erscheint zusätzlich ein violettes Badge mit dem Text **"KI-verfeinert"**.
 
@@ -109,7 +109,7 @@ Ein aufklappbares Panel listet die spezifischeren Unterkategorien der aktuellen 
 - **Klick auf eine Zeile** navigiert zur spezifischen Diagnose
 
 <!-- Screenshot: Unterkategorien einer Diagnose -->
-![Screenshot](/screenshots/unterkategorien.png)
+![Screenshot](/docs/screenshots/unterkategorien.png)
 
 ### 5.5 Folgefragen stellen (Dialog)
 
@@ -122,7 +122,7 @@ Am unteren Rand befindet sich ein Eingabefeld für Folgefragen. Die Fragen bezie
 - Der Verlauf ist auf-/zuklappbar über den Header "Gesprächsverlauf (X Nachrichten)"
 
 <!-- Screenshot: Dialog mit Folgefrage und Antwort -->
-![Screenshot](/screenshots/dialogpanel.png)
+![Screenshot](/docs/screenshots/dialogpanel.png)
 
 
 ---
