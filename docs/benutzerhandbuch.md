@@ -19,7 +19,8 @@
 
 Beim Aufrufen der Anwendung erscheint die Startseite mit zwei Hauptelementen:
 
-//TODO Screenshot der Startseite einfügen
+<!-- Screenshot: Startseite -->
+![Screenshot](/screenshots/startseite.png)
 
 ### 3.1 Suchfeld
 
@@ -32,7 +33,8 @@ Das zentrale Suchfeld akzeptiert zwei Arten von Eingaben:
 
 Unterhalb des Suchfelds befindet sich ein alphabetischer Index mit vorbereiteten Diagnosen. Klicken Sie auf einen Buchstaben, um Diagnosen zu filtern, und wählen Sie eine Diagnose direkt aus.
 
-//TODO Screenshots einfügen
+<!-- Screenshot: Krankheits-Index (A-Z) -->
+![Screenshot](/screenshots/krankheitsindex.png)
 
 ---
 
@@ -55,7 +57,7 @@ Bei Freitext-Eingaben (z.B. "starke Rückenschmerzen"):
    - Nach ca. 2-3 Sekunden erscheint: "Detaillierte Analyse deines komplexeren Symptoms..."
    - Das verfeinerte Ergebnis trägt den Badge "KI-verfeinert"
 
-//TODO Screenshots einfügen
+//TODO
 
 ---
 
@@ -64,18 +66,18 @@ Bei Freitext-Eingaben (z.B. "starke Rückenschmerzen"):
 Nach einer erfolgreichen Suche wird die Ergebnis-Ansicht angezeigt:
 
 <!-- Screenshot: Vollständige Ergebnisseite -->
-*[Screenshot: Ergebnis-Ansicht wird hier eingefügt]*
+![Screenshot](/screenshots/ergebnisansicht.png)
 
 ### 5.1 Diagnose-Karte
 
 Die prominente Hauptkarte zeigt:
 - **ICD-10-Code** (z.B. J18) als blaues Badge
 - **Diagnose-Titel** (z.B. "Pneumonie, Erreger nicht näher bezeichnet")
-- **Katalogversion** (ICD-10-GM 2024)
+- **Katalogversion** (ICD-10)
 - **Treffsicherheit** als kreisförmiger Tachometer (0-100%)
 
 <!-- Screenshot: Diagnose-Karte mit Tachometer -->
-*[Screenshot: Tachometer-Detail wird hier eingefügt]*
+![Screenshot](/screenshots/tachometerdetail.png)
 
 Falls die KI das Ergebnis verbessert hat, erscheint zusätzlich ein violettes Badge mit dem Text **"KI-verfeinert"**.
 
@@ -106,20 +108,22 @@ Ein aufklappbares Panel listet die spezifischeren Unterkategorien der aktuellen 
 - Jede Zeile zeigt Code, Titel und einen Relevanzbalken
 - **Klick auf eine Zeile** navigiert zur spezifischen Diagnose
 
-//TODO noch Screenshots einfügen
+<!-- Screenshot: Unterkategorien einer Diagnose -->
+![Screenshot](/screenshots/unterkategorien.png)
 
 ### 5.5 Folgefragen stellen (Dialog)
 
 Am unteren Rand befindet sich ein Eingabefeld für Folgefragen. Die Fragen beziehen sich automatisch auf die aktuelle Diagnose.
 
-**Beispiel: Bei Diagnose "Pneumonie" können Sie fragen: "Ist das ansteckend?" oder "Wie lange dauert die Genesung?"
+**Beispiel: Bei der Diagnose "Asthma bronchiale" können Sie fragen: "Ist das ansteckend?" oder "Wie lange dauert die Genesung?"
 
 - Geben Sie Ihre Frage ein und drücken Sie `Enter` oder klicken Sie auf "Senden"
 - Die Antwort erscheint im Gesprächsverlauf
 - Der Verlauf ist auf-/zuklappbar über den Header "Gesprächsverlauf (X Nachrichten)"
 
 <!-- Screenshot: Dialog mit Folgefrage und Antwort -->
-*[Screenshot: DialogPanel wird hier eingefügt]*
+![Screenshot](/screenshots/dialogpanel.png)
+
 
 ---
 
