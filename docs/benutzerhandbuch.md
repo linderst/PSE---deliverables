@@ -167,8 +167,8 @@ Für ärztliche Zeugnisse, Rezepte oder eine medizinische Beratung besuchen Sie 
 
 1. **Repository klonen:**
 ```bash
-git clone https://github.com/linderst/PSE---deliverables.git
-cd PSE---deliverables
+git clone <repository-url>
+cd <repository-name>
 ```
 
 2. **Umgebungsvariablen einrichten:**
