@@ -136,23 +136,15 @@ Sämtlicher Zustand ist in `App.jsx` zentralisiert. Die 15 useState-Hooks lassen
 
 ## 5. Sequenzdiagramme
 
-### 5.1 Suche mit hoher Konfidenz (Score >= 75%)
-//TODO noch erstellen
+Alle relevanten und nicht-trivialen Sequenz- und Ablaufdiagramme der Anwendung sind zentral und ausführlich in der Haupt-Systemdokumentation erfasst:
 
+👉 **Siehe [Klassendiagramm & Funktionsweise](../klassendiagramm_und_funktionsweise.md)**
 
-### 5.2 Suche mit KI-Verfeinerung (Score < 75%)
-
-//TODO noch erstellen
-
-
-### 5.3 Kontextueller Dialog (Folgefragen)
-
-//TODO noch erstellen
-
-
-### 5.4 URL-basiertes Routing (History API)
-
-//TODO noch erstellen
+Dort findest du folgende detaillierte Diagramme:
+* **Abschnitt 14 (Ablaufdiagramm: URL-Lifecycle):** Visualisiert den Datenfluss vom Suchbegriff bis zur SEO-optimierten URL.
+* **Abschnitt 15 (Zweiphasen-Suchlogik):** Sequenzdiagramm für die Hybridsuche (Direkt-Match -> Meilisearch -> pgvector) sowie die Gemini-erweiterte Suche.
+* **Abschnitt 16 (AI-Cache-System):** Sequenzdiagramm über das Caching-Verhalten der FastAPI-Endpunkte mit PostgreSQL.
+* **Abschnitt 18 (Kontextueller Chat):** Sequenzdiagramm für den zweiseitigen Chatbot und die Gemini-Prompt-Generierung.
 
 
 ## 6. Verwendete Entwurfsmuster (Design Patterns)
@@ -161,7 +153,7 @@ Sämtlicher Zustand ist in `App.jsx` zentralisiert. Die 15 useState-Hooks lassen
 - **App.jsx** ist die einzige Container-Komponente (besitzt allen Zustand und die Geschäftslogik).
 - Alle anderen Komponenten sind reine Präsentationskomponenten (empfangen Daten und Callbacks als Props, rendern UI).
 
-### Observ```er Pattern (useEffect)
+### Observer Pattern (useEffect)
 - 6 useEffect-Hooks in App.jsx reagieren auf Zustandsänderungen:
   - SEO-Meta-Tags aktualisieren bei `currentCondition`-änderung
   - Subcodes laden bei `currentCondition.code`-änderung
@@ -216,7 +208,7 @@ Response: { answer: "..." }
 
 ### 8.1 Design Tokens (CSS Custom Properties)
 
-//TODO, falls es sich öndert
+Die Applikation nutzt folgende CSS-Design-Tokens für ein einheitliches Medical-Design:
 ```css
 :root {
   --bg: #f5f5f3;            /* Hintergrund */
@@ -258,7 +250,7 @@ Sämtliches Styling ist in einer einzigen Datei (`App.css`) zentralisiert. Die K
 
 ### 9.1 Aktueller Stand
 
-//TODO Tests, falls Automatisierte kommen
+In der aktuellen Version (v1.0) liegt der Fokus auf manuellen Abnahme-, Kompatibilitäts- und Usability-Tests. Alle Kernfunktionen werden systematisch geprüft:
 
 Das Frontend verfügt derzeit über keine automatisierten Tests. Alle Tests werden manuell durchgeführt:
 - Funktionale Tests: Suche nach ICD-Code, Freitext-Symptome, A-Z Index, Folgefragen
@@ -267,7 +259,7 @@ Das Frontend verfügt derzeit über keine automatisierten Tests. Alle Tests werd
 
 ### 9.2 Backend-Tests 
 
-//TODO falls noch mehr dazukommen
+Zur Sicherung der Backend-Stabilität und Relevanzqualität sind folgende automatisierte Test-Suites implementiert:
 
 - `src/backend/tests/test_api.py` — API-Endpoint-Tests (pytest + httpx)
 - `src/backend/tests/evaluate_search.py` — Suchqualitäts-Evaluation
@@ -281,7 +273,7 @@ E2E Tests (User-Flows) mit Playwright
 ## 10. Sicherheitskonzept (Frontend)
 
 ### 10.1 CORS
-//TODO muss sich noch in Zukunft ändern
+Zur Absicherung der Schnittstellen während der Entwicklung:
 
 - Backend erlaubt aktuell "allow_origins=["*"]"; akzeptabel für die Entwicklungsphase, muss für die Produktion auf die spezifische Domain eingeschränkt werden.
 

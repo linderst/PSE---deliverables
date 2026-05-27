@@ -10,8 +10,14 @@
 
 ---
 
-## 2. Systemanforderungen
-//TODO
+Für die Nutzung der Medcode-Plattform gelten folgende Voraussetzungen:
+
+### Für Endnutzer (Client)
+* **Webbrowser:** Ein moderner, standardkonformer Webbrowser (z. B. Google Chrome, Mozilla Firefox, Apple Safari oder Microsoft Edge) mit aktiviertem JavaScript.
+* **Bildschirmauflösung:** Die Anwendung ist voll-responsiv gestaltet und für mobile Geräte (Smartphones, Tablets) sowie Desktop-Bildschirme optimiert.
+
+### Für den Serverbetrieb (Infrastruktur)
+Die genauen Anforderungen für den Serverbetrieb und die Installation mittels Docker findest du am Ende dieses Dokuments im **Anhang A: Installation und Betrieb**.
 
 ---
 
@@ -56,9 +62,8 @@ Bei Freitext-Eingaben (z.B. "starke Rückenschmerzen"):
    - Die Anzeige wechselt zu "KI-Diagnose läuft..."
    - Nach ca. 2-3 Sekunden erscheint: "Detaillierte Analyse deines komplexeren Symptoms..."
    - Das verfeinerte Ergebnis trägt den Badge "KI-verfeinert"
-
-//TODO
-
+### 4.3 Alternative Vorschläge
+Das System beschränkt sich nicht nur auf das beste Ergebnis, sondern präsentiert darunter alternative Übereinstimmungen als auswählbare Chips (siehe Abschnitt 5.2). So können Benutzer auch bei unscharfen Beschreibungen die am besten passende Diagnose finden.
 ---
 
 ## 5. Ergebnis-Ansicht
